@@ -22,13 +22,19 @@ html {
   position: relative;
   min-height: 100vh;
   background-color: #0a0a0a;
-  background-image: 
+  /*background-image:
     url('/fone.png'),
-    radial-gradient(circle, transparent 20%, rgba(10, 10, 10, 0.85) 100%);
+    radial-gradient(circle, transparent 20%, rgba(10, 10, 10, 0.85) 100%);*/
   background-size: cover, cover;
   background-position: center center, center center;
   background-repeat: no-repeat, no-repeat;
   background-attachment: fixed, fixed;
+}
+
+.bg-hero-pattern {
+    background-image:
+      url('/639680800698e68b053c5f97b16d6ea9.jpg'),
+      radial-gradient(circle, transparent 20%, rgba(10, 10, 10, 0.85) 100%)!important;
 }
 
 body {
@@ -37,7 +43,7 @@ body {
   color: #F5F5F0;
   position: relative;
   min-height: 100vh;
-  
+
 }
 
 
@@ -63,4 +69,3 @@ body {
 ::selection {
   background-color: rgba(212, 175, 55, 0.3);
 }
-

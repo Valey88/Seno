@@ -1,56 +1,145 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GlassCard } from './GlassCard';
 import { Review, User } from '../types';
 import { useReviewsStore } from '../stores/reviewsStore';
-import { Star, Image as ImageIcon, Send, Lock } from 'lucide-react';
+import { Star, Image as ImageIcon, Send, Lock, Upload, X, Plus } from 'lucide-react';
 
 interface ReviewsSectionProps {
     currentUser: User | null;
     onOpenAuth: () => void;
 }
 
+// Хелпер для конвертации файла в Base64
+const readFileAsDataURL = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+};
+
 export const ReviewsSection: React.FC<ReviewsSectionProps> = ({ currentUser, onOpenAuth }) => {
-    const { reviews, fetchReviews, createReview, isLoading } = useReviewsStore();
+    const { reviews, fetchReviews, createReview } = useReviewsStore();
     const [isFormOpen, setIsFormOpen] = useState(false);
-    
+
     // Form State
     const [newText, setNewText] = useState('');
     const [newRating, setNewRating] = useState(5);
-    const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-    // Fetch Reviews
+    // ИЗМЕНЕНИЕ: Теперь храним массив строк (картинок)
+    const [selectedImages, setSelectedImages] = useState<string[]>([]);
+    const [isDragOver, setIsDragOver] = useState(false);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     useEffect(() => {
-        fetchReviews(true); // Get only approved reviews
+        fetchReviews(true);
     }, [fetchReviews]);
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const url = URL.createObjectURL(e.target.files[0]);
-            setSelectedImage(url);
+    // Обработка выбора файлов (поддержка нескольких)
+    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const files = Array.from(e.target.files);
+            const newImages: string[] = [];
+
+            // Ограничим макс. кол-во фото, например 5
+            if (selectedImages.length + files.length > 5) {
+                alert("Максимум 5 фотографий");
+                return;
+            }
+
+            for (const file of files) {
+                try {
+                    const base64 = await readFileAsDataURL(file);
+                    newImages.push(base64);
+                } catch (error) {
+                    console.error("Error reading file:", error);
+                }
+            }
+            setSelectedImages([...selectedImages, ...newImages]);
         }
+    };
+
+    // Обработка Drag & Drop
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const files = Array.from(e.dataTransfer.files);
+            const newImages: string[] = [];
+
+            if (selectedImages.length + files.length > 5) {
+                alert("Максимум 5 фотографий");
+                return;
+            }
+
+            for (const file of files) {
+                if (file.type.startsWith('image/')) {
+                    const base64 = await readFileAsDataURL(file);
+                    newImages.push(base64);
+                }
+            }
+            setSelectedImages([...selectedImages, ...newImages]);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+    };
+
+    // Удаление конкретного фото
+    const removeImage = (indexToRemove: number) => {
+        setSelectedImages(selectedImages.filter((_, index) => index !== indexToRemove));
+        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newText || !currentUser) return;
+        if (!currentUser) return;
 
-        // Convert image to base64 if needed, or just use URL
-        // For now, we'll pass the URL as image_url
+        // --- ЛОГИКА ВАЛИДАЦИИ ---
+        // 1, 2, 3 звезды -> Обязательно текст И фото
+        if (newRating <= 3) {
+            if (!newText.trim()) {
+                alert("Для оценки 3 звезды и ниже описание проблемы обязательно.");
+                return;
+            }
+            if (selectedImages.length === 0) {
+                alert("Для низкой оценки необходимо приложить хотя бы одно фото.");
+                return;
+            }
+        }
+
+        // 4, 5 звезд -> Можно без текста и без фото, или с чем-то одним
+        // Никаких дополнительных проверок не требуется, кроме того, что отзыв не может быть полностью пустым (хотя рейтинг есть всегда).
+
         const result = await createReview({
             author: currentUser.name || "Гость",
             rating: newRating,
             text: newText,
-            image_url: selectedImage || undefined,
+            // Бэкенд должен ожидать массив 'images' или мы передаем первую картинку в старое поле image_url
+            // Для поддержки старого бэкенда пока передадим первую,
+            // НО я добавил поле 'images' в объект, чтобы вы обновили бэкенд (см. инструкцию ниже)
+            images: selectedImages,
         });
 
         if (result.success) {
-            // Reset
             setNewText('');
             setNewRating(5);
-            setSelectedImage(null);
+            setSelectedImages([]);
             setIsFormOpen(false);
+        } else {
+            alert("Ошибка при отправке отзыва. " + (result.error || ""));
         }
     };
 
@@ -61,10 +150,9 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({ currentUser, onO
                  <p className="text-white/60 text-sm uppercase tracking-widest font-medium">Ваши впечатления — наша гордость</p>
             </div>
 
-            {/* "Add Review" Toggle Area */}
             <div className="mb-12 flex justify-center">
                 {!currentUser ? (
-                     <button 
+                     <button
                         onClick={onOpenAuth}
                         className="flex items-center gap-3 px-8 py-3 rounded-lg bg-white/5 border border-white/10 hover:border-luxury-gold/50 text-white/50 hover:text-white transition-all"
                     >
@@ -73,7 +161,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({ currentUser, onO
                     </button>
                 ) : (
                     !isFormOpen ? (
-                        <button 
+                        <button
                             onClick={() => setIsFormOpen(true)}
                             className="group relative px-8 py-3 rounded-lg overflow-hidden bg-white/5 border border-white/10 hover:border-luxury-gold hover:bg-luxury-gold/10 transition-all duration-300"
                         >
@@ -86,22 +174,27 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({ currentUser, onO
                                     <h3 className="font-serif text-xl text-white">Новый отзыв</h3>
                                     <button type="button" onClick={() => setIsFormOpen(false)} className="text-xs text-white/30 hover:text-white uppercase tracking-wider">Отмена</button>
                                 </div>
-                                
+
                                 {/* Rating */}
-                                <div className="flex gap-2 justify-center mb-6">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                        <button 
-                                            type="button" 
-                                            key={star} 
-                                            onClick={() => setNewRating(star)}
-                                            className="transition-transform hover:scale-110 focus:outline-none"
-                                        >
-                                            <Star 
-                                                size={24} 
-                                                className={`${star <= newRating ? 'fill-luxury-gold text-luxury-gold' : 'fill-transparent text-white/20'}`} 
-                                            />
-                                        </button>
-                                    ))}
+                                <div className="flex flex-col items-center gap-2 mb-6">
+                                    <div className="flex gap-2">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <button
+                                                type="button"
+                                                key={star}
+                                                onClick={() => setNewRating(star)}
+                                                className="transition-transform hover:scale-110 focus:outline-none"
+                                            >
+                                                <Star
+                                                    size={28}
+                                                    className={`${star <= newRating ? 'fill-luxury-gold text-luxury-gold' : 'fill-transparent text-white/20'}`}
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="text-[10px] text-white/40 uppercase tracking-widest h-4">
+                                        {newRating <= 3 ? "Требуется описание и фото" : "Отлично!"}
+                                    </p>
                                 </div>
 
                                 <div className="space-y-4">
@@ -109,33 +202,71 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({ currentUser, onO
                                         <p className="text-white/40 text-xs uppercase tracking-widest">Автор: <span className="text-white">{currentUser.name}</span></p>
                                     </div>
                                     <div className="space-y-2">
-                                        <textarea 
+                                        <textarea
                                             rows={4}
-                                            placeholder="Расскажите о ваших впечатлениях..."
+                                            placeholder={newRating <= 3 ? "Пожалуйста, опишите, что пошло не так (обязательно)..." : "Расскажите о ваших впечатлениях (необязательно)..."}
                                             value={newText}
                                             onChange={(e) => setNewText(e.target.value)}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:border-luxury-gold outline-none transition-colors resize-none"
-                                            required
+                                            className={`w-full bg-white/5 border rounded-lg px-4 py-3 text-white text-sm focus:border-luxury-gold outline-none transition-colors resize-none ${newRating <= 3 && !newText ? 'border-red-500/50' : 'border-white/10'}`}
                                         />
                                     </div>
-                                    
-                                    <div className="flex items-center gap-4">
-                                        <label className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition-colors text-white/60 hover:text-white text-xs uppercase tracking-wider">
-                                            <ImageIcon size={16} />
-                                            <span>{selectedImage ? 'Фото выбрано' : 'Добавить фото'}</span>
-                                            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+
+                                    {/* Image Dropzone Area */}
+                                    <div className="space-y-2">
+                                        <label className={`text-[10px] uppercase tracking-widest ${newRating <= 3 && selectedImages.length === 0 ? 'text-red-400' : 'text-white/40'}`}>
+                                            {newRating <= 3 ? 'Фотографии (обязательно)' : 'Фотографии (опционально)'}
                                         </label>
-                                        {selectedImage && (
-                                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-white/20">
-                                                <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
-                                            </div>
-                                        )}
+
+                                        <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                                            {selectedImages.map((img, idx) => (
+                                                <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-white/20 group">
+                                                    <img src={img} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeImage(idx)}
+                                                        className="absolute top-1 right-1 p-1 bg-black/60 text-white hover:text-red-400 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ))}
+
+                                            {selectedImages.length < 5 && (
+                                                <div
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    onDragOver={handleDragOver}
+                                                    onDragLeave={handleDragLeave}
+                                                    onDrop={handleDrop}
+                                                    className={`
+                                                        aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all duration-300
+                                                        ${isDragOver
+                                                            ? 'border-luxury-gold bg-luxury-gold/10'
+                                                            : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'}
+                                                        ${newRating <= 3 && selectedImages.length === 0 ? 'border-red-500/30 bg-red-900/10' : ''}
+                                                    `}
+                                                >
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        multiple
+                                                        className="hidden"
+                                                        ref={fileInputRef}
+                                                        onChange={handleImageSelect}
+                                                    />
+                                                    <Plus size={24} className="text-white/40 mb-1" />
+                                                    <span className="text-[10px] text-white/30 uppercase">Добавить</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
-                                <button 
-                                    type="submit" 
-                                    className="w-full bg-luxury-gold text-luxury-black font-semibold uppercase tracking-widest text-xs py-4 rounded-lg hover:bg-white transition-colors flex items-center justify-center gap-2"
+                                <button
+                                    type="submit"
+                                    className={`w-full font-semibold uppercase tracking-widest text-xs py-4 rounded-lg transition-colors flex items-center justify-center gap-2
+                                        ${(newRating <= 3 && (!newText || selectedImages.length === 0))
+                                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                            : 'bg-luxury-gold text-luxury-black hover:bg-white'}`}
                                 >
                                     <Send size={16} />
                                     <span>Опубликовать</span>
@@ -161,19 +292,34 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({ currentUser, onO
                                  ))}
                              </div>
                         </div>
-                        
-                        <p className="text-white/70 text-sm leading-relaxed mb-4 flex-grow italic font-light">
-                            "{review.text}"
-                        </p>
 
-                        {review.image && (
-                            <div className="mt-auto pt-4 border-t border-white/5">
-                                <div className="h-40 w-full rounded-lg overflow-hidden relative group cursor-pointer">
-                                     <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all"></div>
-                                     <img src={review.image} alt="Review attachment" className="w-full h-full object-cover" />
+                        {review.text && (
+                            <p className="text-white/70 text-sm leading-relaxed mb-4 flex-grow italic font-light">
+                                "{review.text}"
+                            </p>
+                        )}
+
+                        {/* Отображение картинок (поддержка массива или одной строки для совместимости) */}
+                        {(review.images && review.images.length > 0) ? (
+                            <div className="mt-auto pt-4 border-t border-white/5 grid grid-cols-3 gap-2">
+                                {review.images.slice(0, 3).map((img, idx) => (
+                                    <div key={idx} className="h-20 w-full rounded overflow-hidden relative cursor-pointer border border-white/10">
+                                        <img src={img} alt="Review" className="w-full h-full object-cover" />
+                                        {idx === 2 && review.images && review.images.length > 3 && (
+                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-xs text-white">
+                                                +{review.images.length - 3}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : review.image ? (
+                             <div className="mt-auto pt-4 border-t border-white/5">
+                                <div className="h-40 w-full rounded-lg overflow-hidden relative border border-white/10">
+                                     <img src={review.image} alt="Review" className="w-full h-full object-cover" />
                                 </div>
                             </div>
-                        )}
+                        ) : null}
                     </GlassCard>
                 ))}
             </div>

@@ -1,222 +1,356 @@
-'use client'
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { GlassCard } from './GlassCard';
-import { HallMap } from './HallMap';
-import { useBookingsStore } from '../stores/bookingsStore';
-import { useTablesStore } from '../stores/tablesStore';
-import { BookingRequest } from '../types';
-import { Loader2, Check } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  Users,
+  ChevronRight,
+  Loader2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { AxiosError } from "axios";
+
+import { HallMap } from "./HallMap";
+import apiClient from "@/services/api"; // Импортируем наш настроенный клиент
+import { Table } from "../types";
+
+type Step = "date-guests" | "time" | "table" | "details" | "payment";
 
 export const BookingForm: React.FC = () => {
-  const { createBooking, confirmPayment, isLoading: bookingLoading } = useBookingsStore();
-  const { tables, fetchTables, isLoading: tablesLoading } = useTablesStore();
-  const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Select, 2: Payment, 3: Success
-  const [error, setError] = useState<string | null>(null);
-  const [bookingId, setBookingId] = useState<number | null>(null);
+  const [step, setStep] = useState<Step>("date-guests");
 
+  // Данные формы
+  const [date, setDate] = useState<Date>(new Date());
+  const [guests, setGuests] = useState<number>(2);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
+  const [contact, setContact] = useState({ name: "", phone: "", comment: "" });
+
+  // Данные от API
+  const [tables, setTables] = useState<Table[]>([]);
+  const [availability, setAvailability] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  // --- 1. Загрузка столов ---
   useEffect(() => {
+    const fetchTables = async () => {
+      try {
+        // Используем apiClient, путь относительный (BaseURL уже содержит /api)
+        const { data } = await apiClient.get<Table[]>("/tables");
+        setTables(data);
+      } catch (e) {
+        toast.error("Не удалось загрузить схему зала");
+        console.error(e);
+      }
+    };
     fetchTables();
   }, []);
 
-  const [formData, setFormData] = useState<BookingRequest>({
-    date: new Date().toISOString().split('T')[0],
-    time: "19:00",
-    guests: 2,
-    name: "",
-    phone: "",
-    tableId: null,
-    comment: ""
-  });
+  // --- 2. Проверка доступности ---
+  useEffect(() => {
+    if (!date) return;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(null);
-  };
+    const checkAvailability = async () => {
+      setLoading(true);
+      try {
+        const dateStr = format(date, "yyyy-MM-dd");
 
-  const handleTableSelect = (id: number) => {
-    setFormData(prev => ({ ...prev, tableId: id }));
-  };
+        // Передаем параметры через объект params
+        const { data } = await apiClient.get(
+          `/bookings/availability/${dateStr}`,
+          {
+            params: { guest_count: guests },
+          },
+        );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+        setAvailability(data);
 
+        // Сброс времени если оно стало недоступным
+        if (selectedTime) {
+          const slot = data.time_slots.find((s: any) =>
+            s.time.startsWith(selectedTime),
+          );
+          if (!slot || !slot.is_available) setSelectedTime(null);
+        }
+      } catch (e) {
+        console.error("Availability check failed:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAvailability();
+  }, [date, guests]);
+
+  // --- Логика сабмита ---
+  const handleSubmit = async () => {
+    if (!selectedTime || !selectedTableId) return;
+
+    setLoading(true);
     try {
-      if (!formData.tableId) throw new Error("Пожалуйста, выберите столик на схеме.");
-      const result = await createBooking(formData);
-      if (!result.success) throw new Error(result.error || "Ошибка бронирования");
+      const payload = {
+        user_name: contact.name,
+        user_phone: contact.phone,
+        date: format(date, "yyyy-MM-dd"),
+        time: selectedTime,
+        guest_count: guests,
+        table_id: selectedTableId,
+        comment: contact.comment,
+      };
 
-      if (result.bookingId) {
-        setBookingId(result.bookingId);
+      const { data } = await apiClient.post("/bookings", payload);
+
+      // Переход на оплату
+      if (data.payment_url) {
+        window.location.href = data.payment_url;
+      } else {
+        toast.success("Бронирование создано!");
+      }
+    } catch (e) {
+      console.error("Booking Error:", e);
+      const error = e as AxiosError<any>; // Используем any, так как структура ошибки может меняться
+      const detail = error.response?.data?.detail;
+
+      let errorMessage = "Неизвестная ошибка бронирования";
+
+      // Логика извлечения текста ошибки
+      if (typeof detail === "string") {
+        // 1. Если пришла просто строка
+        errorMessage = detail;
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        // 2. Если пришел массив ошибок валидации (обычно FastAPI)
+        // Берем поле 'msg' из первого элемента
+        errorMessage = detail[0].msg || "Ошибка валидации данных";
+      } else if (detail && typeof detail === "object" && detail.msg) {
+        // 3. Если пришел одиночный объект ошибки
+        errorMessage = detail.msg;
       }
 
-      setStep(2);
-      
-      // Simulate payment processing
-      setTimeout(async () => {
-          if (result.bookingId) {
-            const paymentResult = await confirmPayment(result.bookingId);
-            if(paymentResult.success) setStep(3);
-          }
-      }, 3000);
-
-    } catch (err: any) {
-      setError(err.message);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
-
-  if (step === 3) {
-    return (
-      <GlassCard className="max-w-md mx-auto p-12 text-center flex flex-col items-center animate-in fade-in duration-700">
-        <div className="w-16 h-16 border border-luxury-gold/30 rounded-full flex items-center justify-center mb-8">
-          <Check className="w-6 h-6 text-luxury-gold" />
-        </div>
-        <h2 className="font-serif text-3xl text-white mb-2 italic">Ждем вас</h2>
-        <p className="text-white/50 text-sm tracking-widest uppercase mb-8">Бронь подтверждена</p>
-        
-        <div className="w-full border-t border-b border-white/5 py-6 mb-8 grid grid-cols-2 gap-y-4 text-left">
-            <span className="text-white/30 text-xs uppercase tracking-widest">Дата</span>
-            <span className="text-white text-right font-serif">{formData.date}</span>
-            
-            <span className="text-white/30 text-xs uppercase tracking-widest">Время</span>
-            <span className="text-white text-right font-serif">{formData.time}</span>
-            
-            <span className="text-white/30 text-xs uppercase tracking-widest">Стол</span>
-            <span className="text-luxury-gold text-right font-serif">№{formData.tableId}</span>
-        </div>
-        
-        <button onClick={() => window.location.reload()} className="text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors">
-          Вернуться на главную
-        </button>
-      </GlassCard>
-    );
-  }
-
-  if (step === 2) {
-    return (
-      <GlassCard className="max-w-md mx-auto p-20 text-center flex flex-col items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 text-luxury-gold animate-spin mb-6" />
-        <h3 className="font-serif text-xl italic text-white">Обработка платежа</h3>
-        <p className="text-white/30 mt-4 text-xs tracking-widest uppercase">Безопасная транзакция</p>
-      </GlassCard>
-    );
-  }
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* Left: Map */}
-        <div className="lg:col-span-7 space-y-6">
-             <div className="flex items-baseline justify-between mb-4 border-b border-white/5 pb-4">
-                <h3 className="font-serif text-2xl text-white italic">Выберите столик</h3>
-                {formData.tableId && <span className="text-xs text-luxury-gold uppercase tracking-widest border border-luxury-gold/20 px-3 py-1 rounded-lg">Стол №{formData.tableId}</span>}
-             </div>
-             {/* Pass dynamic tables to HallMap */}
-             <HallMap tables={tables} selectedTableId={formData.tableId} onSelectTable={handleTableSelect} />
-        </div>
+    <div className="min-h-[500px] flex flex-col gap-8 p-6 md:p-8 bg-[#151515] rounded-xl">
+      {/* Прогресс бар */}
+      <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-white/30 mb-4">
+        <span className={step === "date-guests" ? "text-luxury-gold" : ""}>
+          1. Детали
+        </span>
+        <span className="w-4 h-[1px] bg-white/10" />
+        <span
+          className={
+            step === "time" || step === "table" ? "text-luxury-gold" : ""
+          }
+        >
+          2. Время и Стол
+        </span>
+        <span className="w-4 h-[1px] bg-white/10" />
+        <span className={step === "details" ? "text-luxury-gold" : ""}>
+          3. Контакты
+        </span>
+      </div>
 
-        {/* Right: Form */}
-        <div className="lg:col-span-5">
-            <GlassCard className="h-full">
-                <h3 className="font-serif text-2xl text-white italic mb-8">Данные гостя</h3>
-                
-                <form onSubmit={handleSubmit} className="space-y-8">
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-2 group">
-                            <label className="text-[10px] text-white/40 uppercase tracking-widest group-hover:text-luxury-gold transition-colors">Дата</label>
-                            <input 
-                                type="date" 
-                                name="date"
-                                value={formData.date}
-                                onChange={handleInputChange}
-                                className="w-full bg-transparent border-b border-white/10 py-2 text-sm text-white focus:border-luxury-gold outline-none transition-colors font-sans"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2 group">
-                             <label className="text-[10px] text-white/40 uppercase tracking-widest group-hover:text-luxury-gold transition-colors">Время</label>
-                             <select 
-                                name="time"
-                                value={formData.time}
-                                onChange={handleInputChange}
-                                className="w-full bg-transparent border-b border-white/10 py-2 text-sm text-white focus:border-luxury-gold outline-none transition-colors appearance-none"
-                            >
-                                {['13:00', '15:00', '17:00', '19:00', '21:00', '23:00'].map(t => (
-                                    <option key={t} value={t} className="bg-luxury-black">{t}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
+      <div className="flex-1">
+        {step === "date-guests" && (
+          <div className="grid md:grid-cols-2 gap-12 animate-in fade-in">
+            <div className="space-y-4">
+              <label className="text-sm text-white/50 uppercase tracking-wider">
+                Дата визита
+              </label>
+              <input
+                type="date"
+                value={format(date, "yyyy-MM-dd")}
+                min={format(new Date(), "yyyy-MM-dd")}
+                onChange={(e) => setDate(new Date(e.target.value))}
+                className="w-full bg-white/5 border border-white/10 p-4 rounded-lg text-white focus:border-luxury-gold outline-none transition-colors"
+              />
+            </div>
 
-                    <div className="space-y-2 group">
-                        <label className="text-[10px] text-white/40 uppercase tracking-widest group-hover:text-luxury-gold transition-colors">Количество гостей</label>
-                        <div className="flex gap-4">
-                           {[1, 2, 3, 4, 5, 6].map(num => (
-                               <button 
-                                type="button"
-                                key={num}
-                                onClick={() => setFormData({...formData, guests: num})}
-                                className={`w-8 h-8 flex items-center justify-center text-xs border rounded-lg transition-all ${formData.guests === num ? 'border-luxury-gold text-luxury-gold' : 'border-white/10 text-white/40 hover:border-white/40'}`}
-                               >
-                                   {num}
-                               </button>
-                           ))}
-                        </div>
-                    </div>
+            <div className="space-y-4">
+              <label className="text-sm text-white/50 uppercase tracking-wider">
+                Количество гостей
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[2, 3, 4, 5, 6, 8, 10, 12].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => setGuests(num)}
+                    className={`p-3 rounded-lg border transition-all ${
+                      guests === num
+                        ? "border-luxury-gold text-luxury-gold bg-luxury-gold/10"
+                        : "border-white/10 text-white/50 hover:bg-white/5"
+                    }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-                    <div className="space-y-2 group">
-                         <label className="text-[10px] text-white/40 uppercase tracking-widest group-hover:text-luxury-gold transition-colors">Ваше Имя</label>
-                         <input 
-                            type="text" 
-                            name="name"
-                            value={formData.name}
-                            onChange={handleInputChange}
-                            className="w-full bg-transparent border-b border-white/10 py-2 text-sm text-white focus:border-luxury-gold outline-none transition-colors"
-                            required
-                        />
-                    </div>
+            <div className="md:col-span-2 flex justify-end">
+              <button
+                onClick={() => setStep("time")}
+                className="bg-white text-black px-8 py-3 rounded-lg font-medium hover:bg-luxury-gold transition-colors flex items-center gap-2"
+              >
+                Далее <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
 
-                    <div className="space-y-2 group">
-                         <label className="text-[10px] text-white/40 uppercase tracking-widest group-hover:text-luxury-gold transition-colors">Телефон</label>
-                         <input 
-                            type="tel" 
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleInputChange}
-                            className="w-full bg-transparent border-b border-white/10 py-2 text-sm text-white focus:border-luxury-gold outline-none transition-colors"
-                            required
-                        />
-                    </div>
+        {step === "time" && (
+          <div className="space-y-6 animate-in fade-in">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl text-white font-serif">Выберите время</h3>
+              <button
+                onClick={() => setStep("date-guests")}
+                className="text-sm text-white/40 hover:text-white"
+              >
+                Назад
+              </button>
+            </div>
 
-                    <div className="space-y-2 group">
-                         <label className="text-[10px] text-white/40 uppercase tracking-widest group-hover:text-luxury-gold transition-colors">Комментарий к брони (необязательно)</label>
-                         <textarea 
-                            name="comment"
-                            value={formData.comment}
-                            onChange={handleInputChange}
-                            rows={2}
-                            placeholder="Пожелания по столику, аллергии..."
-                            className="w-full bg-transparent border-b border-white/10 py-2 text-sm text-white focus:border-luxury-gold outline-none transition-colors resize-none"
-                        />
-                    </div>
+            {loading && (
+              <div className="text-luxury-gold flex gap-2 items-center">
+                <Loader2 className="animate-spin" /> Загрузка слотов...
+              </div>
+            )}
 
-                    <div className="pt-4 flex items-center justify-between">
-                         <div>
-                            <p className="text-luxury-gold text-sm font-serif italic">Необходим депозит</p>
-                            <p className="text-white/30 text-[10px] uppercase tracking-widest">К оплате: 500₽</p>
-                         </div>
-                         <button 
-                            type="submit" 
-                            disabled={bookingLoading || tablesLoading}
-                            className="px-8 py-3 bg-white text-black text-xs uppercase tracking-widest hover:bg-luxury-gold transition-colors disabled:opacity-50 rounded-lg"
-                        >
-                            {(bookingLoading || tablesLoading) ? 'Обработка...' : 'Оплатить и забронировать'}
-                        </button>
-                    </div>
-                     {error && <p className="text-red-400 text-xs">{error}</p>}
-                </form>
-            </GlassCard>
-        </div>
+            {!loading && availability && (
+              <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                {availability.time_slots.map((slot: any) => (
+                  <button
+                    key={slot.time}
+                    disabled={!slot.is_available}
+                    onClick={() => {
+                      setSelectedTime(slot.time);
+                      setStep("table");
+                    }}
+                    className={`
+                      py-3 px-2 rounded border text-sm transition-all
+                      ${
+                        slot.time.startsWith(selectedTime || "")
+                          ? "bg-luxury-gold text-black border-luxury-gold"
+                          : slot.is_available
+                            ? "bg-white/5 border-white/10 text-white hover:border-white/30"
+                            : "opacity-30 cursor-not-allowed border-transparent text-white/20"
+                      }
+                    `}
+                  >
+                    {slot.time.slice(0, 5)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {availability && availability.min_advance_hours && (
+              <p className="text-xs text-white/30 mt-4 text-center">
+                * Бронирование возможно минимум за{" "}
+                {availability.min_advance_hours} часа до начала
+              </p>
+            )}
+          </div>
+        )}
+
+        {step === "table" && (
+          <div className="space-y-4 animate-in fade-in h-full flex flex-col">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl text-white font-serif">Выберите стол</h3>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setStep("time")}
+                  className="text-sm text-white/40 hover:text-white"
+                >
+                  Назад
+                </button>
+                {selectedTableId && (
+                  <button
+                    onClick={() => setStep("details")}
+                    className="bg-luxury-gold text-black px-6 py-2 rounded text-sm font-bold animate-pulse"
+                  >
+                    Выбрать стол №{selectedTableId}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 min-h-[400px]">
+              <HallMap
+                tables={tables}
+                selectedTableId={selectedTableId}
+                onSelectTable={setSelectedTableId}
+                // Можно передать список занятых, если API их возвращает отдельно
+                occupiedTableIds={[]}
+              />
+            </div>
+          </div>
+        )}
+
+        {step === "details" && (
+          <div className="max-w-md mx-auto space-y-6 animate-in fade-in">
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-serif text-white mb-2">
+                Подтверждение
+              </h3>
+              <p className="text-white/50">
+                {format(date, "d MMMM", { locale: ru })} в{" "}
+                {selectedTime?.slice(0, 5)} <br />
+                Стол №{selectedTableId}, {guests} персон
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <input
+                placeholder="Ваше имя"
+                className="w-full bg-white/5 border border-white/10 p-3 rounded text-white"
+                value={contact.name}
+                onChange={(e) =>
+                  setContact({ ...contact, name: e.target.value })
+                }
+              />
+              <input
+                placeholder="Телефон (+7...)"
+                className="w-full bg-white/5 border border-white/10 p-3 rounded text-white"
+                value={contact.phone}
+                onChange={(e) =>
+                  setContact({ ...contact, phone: e.target.value })
+                }
+              />
+              <textarea
+                placeholder="Комментарий (необязательно)"
+                className="w-full bg-white/5 border border-white/10 p-3 rounded text-white h-24"
+                value={contact.comment}
+                onChange={(e) =>
+                  setContact({ ...contact, comment: e.target.value })
+                }
+              />
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={loading || !contact.phone || !contact.name}
+              className="w-full bg-luxury-gold text-black py-4 rounded-lg font-bold uppercase tracking-widest hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <Loader2 className="animate-spin mx-auto" />
+              ) : (
+                `Оплатить депозит`
+              )}
+            </button>
+            <button
+              onClick={() => setStep("table")}
+              className="w-full text-center text-sm text-white/30 hover:text-white mt-2"
+            >
+              Назад
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

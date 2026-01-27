@@ -1,8 +1,13 @@
-'use client'
+"use client";
+import { HomeView } from "@/components/views/HomeView";
+import { useRouter } from "next/navigation";
 
-import { HomePage } from '@/components/HomePage'
-
-export default function Home() {
-  return <HomePage />
+export default function HomePage() {
+  const router = useRouter();
+  // Передаем функцию навигации для кнопок внутри HomeView
+  return (
+    <HomeView
+      onNavigate={(path) => router.push(`/${path === "home" ? "" : path}`)}
+    />
+  );
 }
-

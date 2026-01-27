@@ -74,5 +74,6 @@ export interface Review {
   rating: number; // 1-5
   date: string;
   text: string;
-  image?: string; // Optional photo URL
+  image?: string;
+  images?: string[];
 }
