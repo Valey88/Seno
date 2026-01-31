@@ -5,23 +5,23 @@ import { Table, Zone, MenuItem, Review } from './types';
 
 export const INITIAL_TABLES: Table[] = [
   // --- HALL 1 (WINDOW) ---
-  { id: 101, zone: Zone.WINDOW, seats: 2, x: 200, y: 150, rotation: 0 },
-  { id: 102, zone: Zone.WINDOW, seats: 2, x: 600, y: 150, rotation: 0 },
-  { id: 103, zone: Zone.WINDOW, seats: 4, x: 200, y: 350, rotation: 90 },
-  { id: 104, zone: Zone.WINDOW, seats: 4, x: 600, y: 350, rotation: 90 },
-  { id: 105, zone: Zone.WINDOW, seats: 6, x: 400, y: 500, rotation: 0 },
+  { id: 101, table_number: "101", zone: Zone.WINDOW, seats: 2, x: 200, y: 150, rotation: 0 },
+  { id: 102, table_number: "102", zone: Zone.WINDOW, seats: 2, x: 600, y: 150, rotation: 0 },
+  { id: 103, table_number: "103", zone: Zone.WINDOW, seats: 4, x: 200, y: 350, rotation: 90 },
+  { id: 104, table_number: "104", zone: Zone.WINDOW, seats: 4, x: 600, y: 350, rotation: 90 },
+  { id: 105, table_number: "105", zone: Zone.WINDOW, seats: 6, x: 400, y: 500, rotation: 0 },
 
   // --- HALL 2 (MAIN) ---
-  { id: 201, zone: Zone.MAIN_HALL, seats: 4, x: 200, y: 200, rotation: 0 },
-  { id: 202, zone: Zone.MAIN_HALL, seats: 4, x: 600, y: 200, rotation: 0 },
-  { id: 203, zone: Zone.MAIN_HALL, seats: 8, x: 400, y: 300, rotation: 0 },
-  { id: 204, zone: Zone.MAIN_HALL, seats: 4, x: 200, y: 450, rotation: 0 },
-  { id: 205, zone: Zone.MAIN_HALL, seats: 4, x: 600, y: 450, rotation: 0 },
+  { id: 201, table_number: "201", zone: Zone.MAIN_HALL, seats: 4, x: 200, y: 200, rotation: 0 },
+  { id: 202, table_number: "202", zone: Zone.MAIN_HALL, seats: 4, x: 600, y: 200, rotation: 0 },
+  { id: 203, table_number: "203", zone: Zone.MAIN_HALL, seats: 8, x: 400, y: 300, rotation: 0 },
+  { id: 204, table_number: "204", zone: Zone.MAIN_HALL, seats: 4, x: 200, y: 450, rotation: 0 },
+  { id: 205, table_number: "205", zone: Zone.MAIN_HALL, seats: 4, x: 600, y: 450, rotation: 0 },
 
   // --- HALL 3 (QUIET) ---
-  { id: 301, zone: Zone.QUIET, seats: 2, x: 250, y: 200, rotation: 45 },
-  { id: 302, zone: Zone.QUIET, seats: 2, x: 550, y: 200, rotation: -45 },
-  { id: 303, zone: Zone.QUIET, seats: 4, x: 400, y: 400, rotation: 0 },
+  { id: 301, table_number: "301", zone: Zone.QUIET, seats: 2, x: 250, y: 200, rotation: 45 },
+  { id: 302, table_number: "302", zone: Zone.QUIET, seats: 2, x: 550, y: 200, rotation: -45 },
+  { id: 303, table_number: "303", zone: Zone.QUIET, seats: 4, x: 400, y: 400, rotation: 0 },
 ];
 
 export const INITIAL_CATEGORIES: { id: string; label: string }[] = [

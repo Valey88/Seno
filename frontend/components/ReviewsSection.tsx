@@ -182,11 +182,16 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({ currentUser, onO
                         </div>
                         <button
                             onClick={onOpenAuth}
-                            className="flex items-center gap-2 px-6 py-3 mx-auto rounded-lg bg-[#FC3F1D]/90 hover:bg-[#FC3F1D] text-white text-sm font-medium transition-colors"
+                            className="relative group flex items-center gap-2 px-6 py-3 mx-auto rounded-lg bg-[#FC3F1D] text-white text-sm font-medium transition-all overflow-hidden shadow-[0_4px_14px_0_rgba(252,63,29,0.39)] hover:shadow-[0_6px_20px_rgba(252,63,29,0.23)] hover:scale-[1.02] active:scale-95"
                         >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12.4 22V13.9H10.5V22H7V7.08C7 4.2 8.8 2 12.5 2C16 2 17.6 3.8 17.6 6.3C17.6 8.3 16.5 9.7 14.6 10.5L18.2 22H14.4L11.5 11.6H12.4V22ZM12.4 9.1C13.8 9.1 14.5 8.3 14.5 6.8C14.5 5.3 13.8 4.5 12.4 4.5C10.9 4.5 10.5 5.4 10.5 7V9.1H12.4Z" />
-                            </svg>
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                            <div className="bg-white rounded-full p-0.5 shrink-0">
+                                <img
+                                    src="/yandex_logo.png"
+                                    alt="Yandex"
+                                    className="w-4 h-4 object-contain rounded-full"
+                                />
+                            </div>
                             Войти через Яндекс
                         </button>
                     </div>
@@ -332,11 +337,16 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({ currentUser, onO
                                     href={YANDEX_MAPS_REVIEW_URL}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#FC3F1D] hover:bg-[#e63917] text-white text-sm font-medium transition-colors"
+                                    className="relative group inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#FC3F1D] text-white text-sm font-medium transition-all overflow-hidden shadow-[0_4px_14px_0_rgba(252,63,29,0.39)] hover:shadow-[0_6px_20px_rgba(252,63,29,0.23)] hover:scale-[1.02] active:scale-95"
                                 >
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12.4 22V13.9H10.5V22H7V7.08C7 4.2 8.8 2 12.5 2C16 2 17.6 3.8 17.6 6.3C17.6 8.3 16.5 9.7 14.6 10.5L18.2 22H14.4L11.5 11.6H12.4V22ZM12.4 9.1C13.8 9.1 14.5 8.3 14.5 6.8C14.5 5.3 13.8 4.5 12.4 4.5C10.9 4.5 10.5 5.4 10.5 7V9.1H12.4Z" />
-                                    </svg>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                                    <div className="bg-white rounded-full p-0.5 shrink-0">
+                                        <img
+                                            src="/yandex_logo.png"
+                                            alt="Yandex"
+                                            className="w-4 h-4 object-contain rounded-full"
+                                        />
+                                    </div>
                                     Оставить отзыв на Яндекс
                                     <ExternalLink size={14} />
                                 </a>

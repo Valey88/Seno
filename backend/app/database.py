@@ -1,6 +1,6 @@
 """
 Database configuration and session management.
-Fixed to ensure tables are created by importing models in init_db.
+Supports PostgreSQL for production and SQLite for local development.
 """
 
 import os
@@ -19,7 +19,11 @@ Base = declarative_base()
 class Settings(BaseSettings):
     """Application settings."""
 
-    database_url: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./senoval.db")
+    # PostgreSQL by default for production, can override with SQLite for local dev
+    database_url: str = os.getenv(
+        "DATABASE_URL", 
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/senoval"
+    )
     secret_key: str = os.getenv(
         "SECRET_KEY", "change-this-secret-key-in-production-min-32-chars"
     )
@@ -28,7 +32,7 @@ class Settings(BaseSettings):
         os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
     )
 
-    # Telegram & SMTP settings (оставляем как было у вас)
+    # Telegram & SMTP settings
     telegram_bot_token: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
     telegram_chat_id: str = os.getenv("TELEGRAM_CHAT_ID", "")
     smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
@@ -52,6 +56,9 @@ class Settings(BaseSettings):
     yandex_redirect_uri: str = os.getenv(
         "YANDEX_REDIRECT_URI", "http://localhost:8000/api/auth/yandex/callback"
     )
+    
+    # Frontend URL for CORS and redirects
+    frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
     class Config:
         env_file = ".env"
@@ -59,12 +66,24 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Create async engine
-engine = create_async_engine(
-    settings.database_url,
-    echo=True,  # Set to False in production
-    future=True,
-)
+# Determine if using SQLite (for local development)
+is_sqlite = settings.database_url.startswith("sqlite")
+
+# Create async engine with appropriate settings
+engine_kwargs = {
+    "echo": os.getenv("DEBUG", "false").lower() == "true",
+    "future": True,
+}
+
+# PostgreSQL specific settings
+if not is_sqlite:
+    engine_kwargs.update({
+        "pool_size": 10,
+        "max_overflow": 20,
+        "pool_pre_ping": True,  # Verify connections are alive
+    })
+
+engine = create_async_engine(settings.database_url, **engine_kwargs)
 
 # Create async session factory
 AsyncSessionLocal = async_sessionmaker(
@@ -91,7 +110,7 @@ async def init_db():
     """
     Initialize database - create all tables.
     """
-    # !!! ВАЖНО: Импортируем модели, чтобы SQLAlchemy знала о них при создании таблиц !!!
+    # Import models so SQLAlchemy knows about them
     import app.models  # noqa: F401
 
     async with engine.begin() as conn:

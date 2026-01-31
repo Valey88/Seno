@@ -18,6 +18,7 @@ interface ReviewsState {
     rating: number;
     text: string;
     image_url?: string;
+    images?: string[];
   }) => Promise<{ success: boolean; error?: string }>;
   deleteReview: (id: number) => Promise<void>;
   approveReview: (id: number) => Promise<void>;

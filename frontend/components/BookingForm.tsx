@@ -137,6 +137,44 @@ export const BookingForm: React.FC = () => {
       setLoading(false);
     }
   };
+
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+
+    // Если пользователь стирает всё, оставляем пустую строку
+    if (!value) {
+      setContact({ ...contact, phone: "" });
+      return;
+    }
+
+    // Если первая цифра 8, 9 или любая другая (кроме 7), меняем на 7
+    if (value[0] !== '7') {
+      value = '7' + value;
+    }
+
+    // Ограничиваем длину до 11 цифр (7 + 10 цифр)
+    if (value.length > 11) value = value.slice(0, 11);
+
+    // Формируем маску
+    let formatted = "+7";
+
+    if (value.length > 1) {
+      formatted += " (" + value.slice(1, 4);
+    }
+    if (value.length >= 5) {
+      formatted += ") " + value.slice(4, 7);
+    }
+    if (value.length >= 8) {
+      formatted += " " + value.slice(7, 9);
+    }
+    if (value.length >= 10) {
+      formatted += " " + value.slice(9, 11);
+    }
+
+    setContact({ ...contact, phone: formatted });
+  };
+
   return (
     <div className="min-h-[500px] flex flex-col gap-8 p-6 md:p-8 bg-[#151515] rounded-xl">
       {/* Прогресс бар */}

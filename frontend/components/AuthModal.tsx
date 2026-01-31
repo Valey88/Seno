@@ -250,11 +250,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
                                 <button
                                     type="button"
                                     onClick={loginWithYandex}
-                                    className="w-full bg-[#FC3F1D] text-white uppercase tracking-widest text-xs py-4 rounded-lg font-bold hover:bg-[#ff5533] transition-colors flex justify-center items-center gap-2"
+                                    className="relative group w-full bg-[#FC3F1D] text-white uppercase tracking-widest text-xs py-4 rounded-lg font-bold hover:bg-[#ff5533] transition-all overflow-hidden flex justify-center items-center gap-2 shadow-[0_4px_14px_0_rgba(252,63,29,0.39)] hover:shadow-[0_6px_20px_rgba(252,63,29,0.23)] hover:scale-[1.01] active:scale-95"
                                 >
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M2.04 12c0-5.523 4.476-10 10-10 5.522 0 10 4.477 10 10s-4.478 10-10 10c-5.524 0-10-4.477-10-10zm6.608-.478h1.558v-5.78h1.87l2.09 5.78h1.474l-2.27-5.946c1.12-.394 1.87-1.404 1.87-2.696 0-1.81-1.254-2.908-3.27-2.908h-3.32v11.55zm1.558-6.728h1.448c1.034 0 1.63.548 1.63 1.428 0 .88-.596 1.428-1.63 1.428h-1.448V4.794z" />
-                                    </svg>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                                    <div className="bg-white rounded-full p-0.5 shrink-0">
+                                        <img
+                                            src="/yandex_logo.png"
+                                            alt="Yandex"
+                                            className="w-8 h-8 object-contain rounded-full"
+                                        />
+                                    </div>
                                     Войти через Яндекс
                                 </button>
                             </>

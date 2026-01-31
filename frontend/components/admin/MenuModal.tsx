@@ -38,7 +38,7 @@ export const MenuModal: React.FC<MenuModalProps> = ({ isOpen, onClose, editingIt
                 isVegan: editingItem.isVegan
             });
         } else {
-            setFormData({ category: categoriesList[0]?.id || 'main', ingredients: [] });
+            setFormData({ category: (categoriesList[0]?.id || 'main') as any, ingredients: [] });
         }
     }, [editingItem, categoriesList]);
 
@@ -98,7 +98,7 @@ export const MenuModal: React.FC<MenuModalProps> = ({ isOpen, onClose, editingIt
                     <h3 className="font-serif text-2xl text-white">
                         {editingItem ? 'Редактировать позицию' : 'Добавить позицию'}
                     </h3>
-                    <button onClick={onClose} className="hover:rotate-90 transition-transform"><X className="text-white/50 hover:text-white"/></button>
+                    <button onClick={onClose} className="hover:rotate-90 transition-transform"><X className="text-white/50 hover:text-white" /></button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pr-2">
@@ -116,14 +116,14 @@ export const MenuModal: React.FC<MenuModalProps> = ({ isOpen, onClose, editingIt
                             >
                                 <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={async (e) => {
                                     const file = e.target.files?.[0];
-                                    if(file) setFormData({ ...formData, image: await readFileAsDataURL(file) });
+                                    if (file) setFormData({ ...formData, image: await readFileAsDataURL(file) });
                                 }} />
 
                                 {formData.image ? (
                                     <div className="relative w-full h-full group">
                                         <img src={formData.image} alt="Preview" className="w-full h-full object-cover rounded-lg" />
                                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                            <span className="text-white text-xs uppercase tracking-widest flex items-center gap-2"><Edit size={16}/> Изменить</span>
+                                            <span className="text-white text-xs uppercase tracking-widest flex items-center gap-2"><Edit size={16} /> Изменить</span>
                                         </div>
                                     </div>
                                 ) : (
@@ -135,11 +135,11 @@ export const MenuModal: React.FC<MenuModalProps> = ({ isOpen, onClose, editingIt
                             </div>
                             <div className="flex gap-4">
                                 <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${formData.isSpicy ? 'bg-red-900/30 border-red-500 text-red-400' : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}>
-                                    <input type="checkbox" className="hidden" checked={formData.isSpicy || false} onChange={e => setFormData({...formData, isSpicy: e.target.checked})} />
+                                    <input type="checkbox" className="hidden" checked={formData.isSpicy || false} onChange={e => setFormData({ ...formData, isSpicy: e.target.checked })} />
                                     <Flame size={16} /> <span className="text-xs uppercase tracking-wider">Острое</span>
                                 </label>
                                 <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${formData.isVegan ? 'bg-green-900/30 border-green-500 text-green-400' : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}>
-                                    <input type="checkbox" className="hidden" checked={formData.isVegan || false} onChange={e => setFormData({...formData, isVegan: e.target.checked})} />
+                                    <input type="checkbox" className="hidden" checked={formData.isVegan || false} onChange={e => setFormData({ ...formData, isVegan: e.target.checked })} />
                                     <Leaf size={16} /> <span className="text-xs uppercase tracking-wider">Веган</span>
                                 </label>
                             </div>
@@ -148,27 +148,27 @@ export const MenuModal: React.FC<MenuModalProps> = ({ isOpen, onClose, editingIt
                         <div className="space-y-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] text-white/40 uppercase tracking-widest">Категория</label>
-                                <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-black border border-white/10 p-4 rounded-lg text-white text-sm focus:border-luxury-gold outline-none">
+                                <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value as any })} className="w-full bg-black border border-white/10 p-4 rounded-lg text-white text-sm focus:border-luxury-gold outline-none">
                                     {categoriesList.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] text-white/40 uppercase tracking-widest">Название</label>
-                                <input type="text" value={formData.title || ''} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-white/5 border border-white/10 p-4 rounded-lg text-white text-sm focus:border-luxury-gold outline-none" />
+                                <input type="text" value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full bg-white/5 border border-white/10 p-4 rounded-lg text-white text-sm focus:border-luxury-gold outline-none" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-[10px] text-white/40 uppercase tracking-widest">Цена (₽)</label>
-                                    <input type="number" value={formData.price || ''} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="w-full bg-white/5 border border-white/10 p-4 rounded-lg text-white text-sm focus:border-luxury-gold outline-none" />
+                                    <input type="number" value={formData.price || ''} onChange={e => setFormData({ ...formData, price: Number(e.target.value) })} className="w-full bg-white/5 border border-white/10 p-4 rounded-lg text-white text-sm focus:border-luxury-gold outline-none" />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] text-white/40 uppercase tracking-widest">Вес (гр)</label>
-                                    <input type="number" value={formData.weight || ''} onChange={e => setFormData({...formData, weight: Number(e.target.value)})} className="w-full bg-white/5 border border-white/10 p-4 rounded-lg text-white text-sm focus:border-luxury-gold outline-none" />
+                                    <input type="number" value={formData.weight || ''} onChange={e => setFormData({ ...formData, weight: Number(e.target.value) })} className="w-full bg-white/5 border border-white/10 p-4 rounded-lg text-white text-sm focus:border-luxury-gold outline-none" />
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] text-white/40 uppercase tracking-widest">Состав</label>
-                                <textarea rows={3} value={formData.ingredients?.join(', ') || ''} onChange={e => setFormData({...formData, ingredients: e.target.value.split(', ')})} className="w-full bg-white/5 border border-white/10 p-4 rounded-lg text-white text-sm focus:border-luxury-gold outline-none resize-none" />
+                                <textarea rows={3} value={formData.ingredients?.join(', ') || ''} onChange={e => setFormData({ ...formData, ingredients: e.target.value.split(', ') })} className="w-full bg-white/5 border border-white/10 p-4 rounded-lg text-white text-sm focus:border-luxury-gold outline-none resize-none" />
                             </div>
                         </div>
                     </div>

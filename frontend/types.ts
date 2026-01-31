@@ -79,4 +79,5 @@ export interface Review {
   text: string;
   image?: string;
   images?: string[];
+  isApproved?: boolean;
 }

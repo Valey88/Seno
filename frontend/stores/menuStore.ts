@@ -5,11 +5,23 @@ import { create } from 'zustand';
 import apiClient from '../services/api';
 import { MenuItem, MenuCategory } from '../types';
 
+interface BackendMenuItem {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  weight: number;
+  image_url: string;
+  is_spicy: boolean;
+  is_vegan: boolean;
+  category_id: number;
+}
+
 interface MenuCategoryWithItems {
   id: number;
   title: string;
   sort_order: number;
-  items: MenuItem[];
+  items: BackendMenuItem[];
 }
 
 interface MenuState {
