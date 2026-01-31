@@ -27,6 +27,7 @@ export interface User {
 
 export interface Table {
   id: number;
+  table_number: string;  // Custom table number (e.g., "A1", "101")
   zone: Zone;
   seats: number;
   x: number; // For SVG positioning

@@ -6,6 +6,7 @@ from datetime import date, time
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Security, status
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -70,11 +71,20 @@ async def create_booking(
         logger.info(f"Creating booking: {booking_data.model_dump()}")
 
         # 1. Strict Business Logic Validation
-        # (Checks 3-hour rule, working hours, and specific table availability if ID provided)
+        logger.info("Starting validation...")
         try:
             await validate_booking_request(db, booking_data)
+            logger.info("Validation passed")
         except ValueError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+            error_message = str(e)
+            logger.error(f"Validation failed: {error_message}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_message
+            )
+        except Exception as e:
+            logger.error(f"Validation Unexpected Error: {type(e)} - {e}")
+            raise
 
         # 2. Table Selection Logic
         final_table_id = booking_data.table_id
@@ -140,7 +150,9 @@ async def create_booking(
             payment_url = f"https://yookassa.ru/payment?booking_id={booking.id}&amount={deposit_amount}"
 
         return BookingPaymentResponse(
-            booking_id=booking.id, payment_url=payment_url, status=booking.status
+            booking_id=booking.id, 
+            payment_url=payment_url, 
+            status=booking.status
         )
 
     except HTTPException:

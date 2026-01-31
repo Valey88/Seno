@@ -22,7 +22,7 @@ import {
 // Components
 import { AdminSidebar } from "./admin/AdminSidebar";
 import { AnalyticsDashboard } from "./admin/AnalyticsDashboard";
-import { BookingsKanban } from "./admin/BookingsKanban";
+import { BookingsTable } from "./admin/BookingsTable";
 import { MenuManager } from "./admin/MenuManager";
 import { TableEditor } from "./admin/TableEditor";
 import { ReviewsKanban } from "./admin/ReviewsKanban";
@@ -82,7 +82,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user }) => {
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-medium text-white capitalize">
               {activeTab === "dashboard" && "Бизнес-аналитика"}
-              {activeTab === "bookings" && "Воронка продаж"}
+              {activeTab === "bookings" && "Управление бронированиями"}
               {activeTab === "menu" && "Управление меню"}
               {activeTab === "tables" && "Редактор зала"}
               {activeTab === "reviews" && "Обратная связь"}
@@ -168,7 +168,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user }) => {
         <main className="flex-1 overflow-y-auto p-8 relative">
           <div className="max-w-[1600px] mx-auto h-full pb-20">
             {activeTab === "dashboard" && <AnalyticsDashboard />}
-            {activeTab === "bookings" && <BookingsKanban />}
+            {activeTab === "bookings" && <BookingsTable />}
             {activeTab === "menu" && <MenuManager />}
             {activeTab === "tables" && <TableEditor />}
             {activeTab === "reviews" && <ReviewsKanban />}

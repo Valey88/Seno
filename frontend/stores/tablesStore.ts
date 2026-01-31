@@ -12,6 +12,7 @@ interface TablesState {
   fetchTables: () => Promise<void>;
   checkAvailability: (date: string, time: string) => Promise<{ occupied: number[]; available: number[] }>;
   createTable: (data: {
+    table_number: string;
     zone: Zone;
     seats: number;
     x: number;
@@ -20,6 +21,7 @@ interface TablesState {
     is_active?: boolean;
   }) => Promise<void>;
   updateTable: (id: number, data: {
+    table_number: string;
     zone: Zone;
     seats: number;
     x: number;
@@ -41,6 +43,7 @@ export const useTablesStore = create<TablesState>((set, get) => ({
       const response = await apiClient.get('/tables');
       const tables: Table[] = response.data.map((table: any) => ({
         id: table.id,
+        table_number: table.table_number,
         zone: table.zone as Zone,
         seats: table.seats,
         x: table.x,
@@ -73,6 +76,7 @@ export const useTablesStore = create<TablesState>((set, get) => ({
   createTable: async (data) => {
     try {
       await apiClient.post('/tables', {
+        table_number: data.table_number,
         zone: data.zone,
         seats: data.seats,
         x: data.x,
@@ -90,6 +94,7 @@ export const useTablesStore = create<TablesState>((set, get) => ({
   updateTable: async (id, data) => {
     try {
       await apiClient.put(`/tables/${id}`, {
+        table_number: data.table_number,
         zone: data.zone,
         seats: data.seats,
         x: data.x,
@@ -114,4 +119,3 @@ export const useTablesStore = create<TablesState>((set, get) => ({
     }
   },
 }));
-

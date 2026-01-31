@@ -28,7 +28,7 @@ export const HallMap: React.FC<HallMapProps> = ({
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
 
   // State for Zoom & Pan
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(0.65);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -168,10 +168,9 @@ export const HallMap: React.FC<HallMapProps> = ({
               }}
               className={`
                 whitespace-nowrap px-4 py-2 text-xs uppercase tracking-widest font-medium rounded-lg transition-all duration-300
-                ${
-                  activeZone === zone.id
-                    ? "bg-luxury-gold text-luxury-black shadow-lg shadow-black/20"
-                    : "text-white/40 hover:text-white hover:bg-white/5"
+                ${activeZone === zone.id
+                  ? "bg-luxury-gold text-luxury-black shadow-lg shadow-black/20"
+                  : "text-white/40 hover:text-white hover:bg-white/5"
                 }
                 `}
             >
@@ -230,19 +229,18 @@ export const HallMap: React.FC<HallMapProps> = ({
                 onClick={() => onSelectTable(table.id)}
                 className={`
                         flex flex-col items-center justify-center p-6 rounded-xl border transition-all duration-300
-                        ${
-                          isOccupied
-                            ? "opacity-50 grayscale cursor-not-allowed bg-red-900/10 border-red-900/20"
-                            : selectedTableId === table.id
-                              ? "bg-luxury-gold/10 border-luxury-gold ring-1 ring-luxury-gold"
-                              : "bg-white/5 border-white/5 hover:bg-white/10"
-                        }
+                        ${isOccupied
+                    ? "opacity-50 grayscale cursor-not-allowed bg-red-900/10 border-red-900/20"
+                    : selectedTableId === table.id
+                      ? "bg-luxury-gold/10 border-luxury-gold ring-1 ring-luxury-gold"
+                      : "bg-white/5 border-white/5 hover:bg-white/10"
+                  }
                     `}
               >
                 <span
                   className={`text-xl font-serif font-bold mb-2 ${selectedTableId === table.id ? "text-luxury-gold" : "text-white"}`}
                 >
-                  № {table.id}
+                  № {table.table_number}
                 </span>
                 <div className="flex items-center gap-2 text-white/50 text-xs uppercase tracking-wider">
                   <Users size={14} />
@@ -254,7 +252,7 @@ export const HallMap: React.FC<HallMapProps> = ({
         </div>
       ) : (
         /* --- MAP VIEW (SVG with Zoom/Pan) --- */
-        <div className="relative w-full h-[400px] md:h-[600px] bg-[#1a1a1a] rounded-xl border border-white/5 overflow-hidden shadow-2xl group select-none">
+        <div className="relative w-full h-[500px] md:h-[800px] bg-[#1a1a1a] rounded-xl border border-white/5 overflow-hidden shadow-2xl group select-none">
           {/* Background Grid */}
           <div
             className="absolute inset-0 opacity-[0.05] pointer-events-none"
@@ -290,8 +288,8 @@ export const HallMap: React.FC<HallMapProps> = ({
             >
               <svg
                 width="800"
-                height="600"
-                viewBox="0 0 800 600"
+                height="800"
+                viewBox="0 0 800 800"
                 className="overflow-visible"
               >
                 {currentTables.map((table) => {
@@ -335,13 +333,12 @@ export const HallMap: React.FC<HallMapProps> = ({
                         height={dims.h}
                         rx="12"
                         className={`transition-all duration-300 stroke-[2px]
-                                ${
-                                  isOccupied
-                                    ? "fill-[#251515] stroke-red-500/20"
-                                    : isSelected
-                                      ? "fill-luxury-gold stroke-white/50 drop-shadow-[0_0_15px_rgba(212,175,55,0.6)]"
-                                      : "fill-[#202020] stroke-white/10 group-hover/table:fill-[#303030]"
-                                }`}
+                                ${isOccupied
+                            ? "fill-[#251515] stroke-red-500/20"
+                            : isSelected
+                              ? "fill-luxury-gold stroke-white/50 drop-shadow-[0_0_15px_rgba(212,175,55,0.6)]"
+                              : "fill-[#202020] stroke-white/10 group-hover/table:fill-[#303030]"
+                          }`}
                       />
 
                       {/* Labels */}
@@ -353,7 +350,7 @@ export const HallMap: React.FC<HallMapProps> = ({
                         className={`text-[16px] font-bold pointer-events-none font-sans
                                 ${isOccupied ? "fill-red-500/30" : isSelected ? "fill-luxury-black" : "fill-white/30"}`}
                       >
-                        {table.id}
+                        {table.table_number}
                       </text>
 
                       <text

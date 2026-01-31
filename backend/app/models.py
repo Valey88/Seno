@@ -98,6 +98,7 @@ class Table(Base):
     __tablename__ = "tables"
 
     id = Column(Integer, primary_key=True, index=True)
+    table_number = Column(String, nullable=False, index=True)  # Custom table number (e.g., "A1", "101")
     zone = Column(SQLEnum(Zone), nullable=False)
     seats = Column(Integer, nullable=False)
     x = Column(Float, nullable=False)

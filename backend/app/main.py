@@ -63,9 +63,20 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle validation errors with CORS headers."""
+    # Extract only serializable error information
+    errors = []
+    for error in exc.errors():
+        # Create a clean error dict with only serializable values
+        clean_error = {
+            "loc": error.get("loc", []),
+            "msg": str(error.get("msg", "Validation error")),
+            "type": str(error.get("type", "value_error")),
+        }
+        errors.append(clean_error)
+    
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": exc.errors()},
+        content={"detail": errors},
         headers={
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Credentials": "true",

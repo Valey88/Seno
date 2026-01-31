@@ -78,6 +78,7 @@ class TokenData(BaseModel):
 class TableCreate(BaseModel):
     """Schema for creating a table."""
 
+    table_number: str = Field(..., min_length=1, max_length=10)  # Custom table number (e.g., "A1", "101")
     zone: Zone
     seats: int = Field(..., gt=0, le=20)
     x: float
@@ -90,6 +91,7 @@ class TableRead(BaseModel):
     """Schema for reading table data (includes coordinates for SVG)."""
 
     id: int
+    table_number: str  # Custom table number
     zone: Zone
     seats: int
     x: float
@@ -170,6 +172,7 @@ class TimeSlotAvailability(BaseModel):
     time: time
     is_available: bool
     available_tables_count: int
+    occupied_table_ids: List[int] = []
     reason: Optional[str] = None  # "fully_booked", "too_late", "closed"
 
 

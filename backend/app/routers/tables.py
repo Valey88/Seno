@@ -35,6 +35,7 @@ async def create_table(
 ):
     """Create a new table (Admin only)."""
     table = Table(
+        table_number=table_data.table_number,
         zone=table_data.zone,
         seats=table_data.seats,
         x=table_data.x,
@@ -68,6 +69,7 @@ async def update_table(
         )
     
     # Update fields
+    table.table_number = table_data.table_number
     table.zone = table_data.zone
     table.seats = table_data.seats
     table.x = table_data.x

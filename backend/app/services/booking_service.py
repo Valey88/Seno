@@ -119,6 +119,7 @@ async def get_day_availability(
         is_available = True
         reason = None
         available_count = 0
+        slot_occupied_tables = []
 
         # ПРОВЕРКА 1: Правило min_advance_hours (или прошло ли время)
         if current_dt < min_booking_threshold:
@@ -140,6 +141,7 @@ async def get_day_availability(
                         # Проверка пересечения интервалов:
                         if current_dt < occ_end and slot_end_dt > occ_start:
                             is_table_busy = True
+                            slot_occupied_tables.append(table_id)
                             break
 
                 if not is_table_busy:
@@ -156,6 +158,7 @@ async def get_day_availability(
                 "time": slot_time,
                 "is_available": is_available,
                 "available_tables_count": available_count,
+                "occupied_table_ids": slot_occupied_tables,
                 "reason": reason,
             }
         )
@@ -278,9 +281,9 @@ def calculate_deposit_amount(guests_count: int) -> float:
     Рассчитывает сумму депозита.
     Здесь вы можете настроить логику (например, фиксированная сумма за человека).
     """
-    DEPOSIT_PER_PERSON = 500.0  # Сумма депозита с человека
+    DEPOSIT_PER_TABLE = 500.0  # Фиксированная сумма за стол
 
     if guests_count <= 0:
         return 0.0
 
-    return float(guests_count * DEPOSIT_PER_PERSON)
+    return DEPOSIT_PER_TABLE

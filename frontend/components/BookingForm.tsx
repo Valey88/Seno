@@ -33,6 +33,7 @@ export const BookingForm: React.FC = () => {
   const [tables, setTables] = useState<Table[]>([]);
   const [availability, setAvailability] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [occupiedTables, setOccupiedTables] = useState<number[]>([]);
 
   // --- 1. Загрузка столов ---
   useEffect(() => {
@@ -105,7 +106,9 @@ export const BookingForm: React.FC = () => {
 
       // Переход на оплату
       if (data.payment_url) {
-        window.location.href = data.payment_url;
+        // window.location.href = data.payment_url;
+        // FOR TESTING ONLY:
+        window.location.href = `/payment/test?booking_id=${data.booking_id}&amount=500`;
       } else {
         toast.success("Бронирование создано!");
       }
@@ -180,11 +183,10 @@ export const BookingForm: React.FC = () => {
                   <button
                     key={num}
                     onClick={() => setGuests(num)}
-                    className={`p-3 rounded-lg border transition-all ${
-                      guests === num
-                        ? "border-luxury-gold text-luxury-gold bg-luxury-gold/10"
-                        : "border-white/10 text-white/50 hover:bg-white/5"
-                    }`}
+                    className={`p-3 rounded-lg border transition-all ${guests === num
+                      ? "border-luxury-gold text-luxury-gold bg-luxury-gold/10"
+                      : "border-white/10 text-white/50 hover:bg-white/5"
+                      }`}
                   >
                     {num}
                   </button>
@@ -223,28 +225,31 @@ export const BookingForm: React.FC = () => {
 
             {!loading && availability && (
               <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                {availability.time_slots.map((slot: any) => (
-                  <button
-                    key={slot.time}
-                    disabled={!slot.is_available}
-                    onClick={() => {
-                      setSelectedTime(slot.time);
-                      setStep("table");
-                    }}
-                    className={`
+                {availability.time_slots
+                  .filter((slot: any) => slot.is_available)
+                  .map((slot: any) => (
+                    <button
+                      key={slot.time}
+                      disabled={!slot.is_available}
+                      onClick={() => {
+                        setSelectedTime(slot.time);
+                        // Set occupied tables for this slot
+                        setOccupiedTables(slot.occupied_table_ids || []);
+                        setStep("table");
+                      }}
+                      className={`
                       py-3 px-2 rounded border text-sm transition-all
-                      ${
-                        slot.time.startsWith(selectedTime || "")
+                      ${slot.time.startsWith(selectedTime || "")
                           ? "bg-luxury-gold text-black border-luxury-gold"
                           : slot.is_available
                             ? "bg-white/5 border-white/10 text-white hover:border-white/30"
                             : "opacity-30 cursor-not-allowed border-transparent text-white/20"
-                      }
+                        }
                     `}
-                  >
-                    {slot.time.slice(0, 5)}
-                  </button>
-                ))}
+                    >
+                      {slot.time.slice(0, 5)}
+                    </button>
+                  ))}
               </div>
             )}
 
@@ -273,7 +278,7 @@ export const BookingForm: React.FC = () => {
                     onClick={() => setStep("details")}
                     className="bg-luxury-gold text-black px-6 py-2 rounded text-sm font-bold animate-pulse"
                   >
-                    Выбрать стол №{selectedTableId}
+                    Выбрать стол №{tables.find(t => t.id === selectedTableId)?.table_number || selectedTableId}
                   </button>
                 )}
               </div>
@@ -285,7 +290,7 @@ export const BookingForm: React.FC = () => {
                 selectedTableId={selectedTableId}
                 onSelectTable={setSelectedTableId}
                 // Можно передать список занятых, если API их возвращает отдельно
-                occupiedTableIds={[]}
+                occupiedTableIds={occupiedTables}
               />
             </div>
           </div>
@@ -300,7 +305,7 @@ export const BookingForm: React.FC = () => {
               <p className="text-white/50">
                 {format(date, "d MMMM", { locale: ru })} в{" "}
                 {selectedTime?.slice(0, 5)} <br />
-                Стол №{selectedTableId}, {guests} персон
+                Стол №{tables.find(t => t.id === selectedTableId)?.table_number || selectedTableId}, {guests} персон
               </p>
             </div>
 
