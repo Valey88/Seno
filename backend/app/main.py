@@ -109,3 +109,51 @@ async def health_check():
     """Health check endpoint."""
     return {"status": "healthy"}
 
+
+@app.get("/init-db-magic")
+async def init_db_magic():
+    """
+    Temporary endpoint to initialize database and create admin.
+    Useful when shell access is restricted (e.g. Render Free Tier).
+    """
+    import asyncio
+    import os
+    
+    # Ensure current directory is correct (should be /app in Docker)
+    cwd = os.getcwd()
+    
+    results = {}
+    
+    try:
+        # 1. Run create_admin.py
+        proc1 = await asyncio.create_subprocess_exec(
+            "python", "create_admin.py",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout1, stderr1 = await proc1.communicate()
+        results["create_admin"] = {
+            "stdout": stdout1.decode(),
+            "stderr": stderr1.decode(),
+            "returncode": proc1.returncode
+        }
+
+        # 2. Run init_data.py
+        proc2 = await asyncio.create_subprocess_exec(
+            "python", "init_data.py",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout2, stderr2 = await proc2.communicate()
+        results["init_data"] = {
+            "stdout": stdout2.decode(),
+            "stderr": stderr2.decode(),
+            "returncode": proc2.returncode
+        }
+        
+        results["cwd"] = cwd
+        return results
+
+    except Exception as e:
+        return {"error": str(e), "cwd": cwd}
+

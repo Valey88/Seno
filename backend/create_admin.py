@@ -10,7 +10,15 @@ from app.auth import get_password_hash
 
 async def create_admin():
     """Create default admin user."""
-    await init_db()
+    from app.database import settings
+    print(f"DEBUG: Using DATABASE_URL={settings.database_url.split('@')[-1]}")
+    print("DEBUG: Starting init_db()...")
+    try:
+        await init_db()
+        print("DEBUG: init_db() completed.")
+    except Exception as e:
+        print(f"DEBUG: init_db() failed: {e}")
+        raise e
     
     async with AsyncSessionLocal() as db:
         # Check if admin already exists
