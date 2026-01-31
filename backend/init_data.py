@@ -137,6 +137,10 @@ async def init_data():
         ]
 
         for table_data in tables_data:
+            # Fix: Add required table_number if missing
+            if "table_number" not in table_data:
+                table_data["table_number"] = str(table_data["id"])
+            
             table = Table(**table_data, is_active=True)
             db.add(table)
 
