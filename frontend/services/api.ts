@@ -3,8 +3,12 @@
  */
 import axios, { AxiosInstance, AxiosError } from "axios";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const getBaseUrl = () => {
+  const url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  return url.endsWith("/api") ? url : `${url.replace(/\/$/, "")}/api`;
+};
+
+const API_BASE_URL = getBaseUrl();
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
