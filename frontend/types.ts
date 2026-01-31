@@ -22,6 +22,7 @@ export interface User {
   phone: string;
   email?: string; // Added for registration
   role: UserRole;
+  oauthProvider?: string | null; // 'yandex' for Yandex OAuth users
   password?: string; // Mock password
 }
 
@@ -66,6 +67,7 @@ export interface Booking extends BookingRequest {
   id: string;
   status: BookingStatus;
   depositAmount: number;
+  tableNumber?: string | null;  // Custom table number for display
   createdAt: Date;
 }
 

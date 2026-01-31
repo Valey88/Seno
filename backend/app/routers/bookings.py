@@ -314,7 +314,7 @@ async def get_bookings(
     current_user: User | None = Depends(get_current_user_optional),
 ):
     """
-    Get all bookings.
+    Get all bookings with table_number.
     Admin sees all, User sees own, Guest sees none.
     """
     if not current_user:
@@ -328,7 +328,34 @@ async def get_bookings(
     result = await db.execute(query)
     bookings = result.scalars().all()
 
-    return bookings
+    # Load table numbers for all bookings
+    table_ids = [b.table_id for b in bookings if b.table_id]
+    table_numbers = {}
+    if table_ids:
+        tables_result = await db.execute(select(Table).where(Table.id.in_(table_ids)))
+        tables = tables_result.scalars().all()
+        table_numbers = {t.id: t.table_number for t in tables}
+
+    # Convert to response with table_number
+    booking_responses = []
+    for booking in bookings:
+        booking_dict = {
+            "id": booking.id,
+            "user_name": booking.user_name,
+            "user_phone": booking.user_phone,
+            "date": booking.date,
+            "time": booking.time,
+            "guest_count": booking.guest_count,
+            "status": booking.status,
+            "deposit_amount": booking.deposit_amount,
+            "table_id": booking.table_id,
+            "table_number": table_numbers.get(booking.table_id) if booking.table_id else None,
+            "comment": booking.comment,
+            "created_at": booking.created_at,
+        }
+        booking_responses.append(booking_dict)
+
+    return booking_responses
 
 
 @router.get("/{booking_id}", response_model=BookingRead)
@@ -386,14 +413,23 @@ async def update_booking(
 ):
     """
     Update booking details (Admin only).
-    Note: Ideally, should also run validate_booking_request if date/time changes.
+    Sends Telegram notification if date/time changes for confirmed bookings.
     """
+    from app.services.telegram_service import send_booking_update_notification
+    
     result = await db.execute(select(Booking).where(Booking.id == booking_id))
     booking = result.scalar_one_or_none()
 
     if not booking:
         raise HTTPException(status_code=404, detail="Бронирование не найдено")
 
+    # Store old values for comparison
+    old_date = booking.date
+    old_time = booking.time
+    date_changed = old_date != booking_data.date
+    time_changed = old_time != booking_data.time
+
+    # Update fields
     booking.user_name = booking_data.user_name
     booking.user_phone = booking_data.user_phone
     booking.date = booking_data.date
@@ -404,5 +440,20 @@ async def update_booking(
 
     await db.commit()
     await db.refresh(booking)
+
+    # Send Telegram notification if date or time changed for confirmed bookings
+    if (date_changed or time_changed) and booking.status.value == "CONFIRMED":
+        # Load table for notification
+        table = None
+        if booking.table_id:
+            table_result = await db.execute(select(Table).where(Table.id == booking.table_id))
+            table = table_result.scalar_one_or_none()
+        
+        await send_booking_update_notification(
+            booking=booking,
+            table=table,
+            old_date=old_date if date_changed else None,
+            old_time=old_time if time_changed else None
+        )
 
     return booking

@@ -46,6 +46,13 @@ class Settings(BaseSettings):
     )
     yookassa_test_mode: str = os.getenv("YOOKASSA_TEST_MODE", "true")
 
+    # Yandex OAuth settings
+    yandex_client_id: str = os.getenv("YANDEX_CLIENT_ID", "")
+    yandex_client_secret: str = os.getenv("YANDEX_CLIENT_SECRET", "")
+    yandex_redirect_uri: str = os.getenv(
+        "YANDEX_REDIRECT_URI", "http://localhost:8000/api/auth/yandex/callback"
+    )
+
     class Config:
         env_file = ".env"
 

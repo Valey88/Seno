@@ -12,10 +12,12 @@ import {
     CheckCircle,
     XCircle,
     Loader2,
-    Filter,
     Search,
-    ChevronDown,
+    Edit3,
+    Save,
+    X,
 } from "lucide-react";
+import { toast } from "sonner";
 
 type StatusFilter = "all" | BookingStatus;
 
@@ -38,10 +40,15 @@ const STATUS_CONFIG = {
 };
 
 export const BookingsTable: React.FC = () => {
-    const { bookings, updateBookingStatus, isLoading } = useBookingsStore();
+    const { bookings, updateBookingStatus, updateBooking, isLoading } = useBookingsStore();
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+    // Edit state
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editDate, setEditDate] = useState("");
+    const [editTime, setEditTime] = useState("");
 
     // Filter bookings
     const filteredBookings = useMemo(() => {
@@ -106,6 +113,47 @@ export const BookingsTable: React.FC = () => {
         handleStatusChange(booking.id, BookingStatus.CANCELLED);
     };
 
+    // Start editing
+    const handleStartEdit = (booking: Booking) => {
+        setEditingId(booking.id);
+        setEditDate(booking.date);
+        setEditTime(booking.time?.slice(0, 5) || booking.time);
+    };
+
+    // Cancel editing
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setEditDate("");
+        setEditTime("");
+    };
+
+    // Save edit
+    const handleSaveEdit = async (booking: Booking) => {
+        if (!editDate || !editTime) {
+            toast.error("Укажите дату и время");
+            return;
+        }
+
+        setUpdatingId(booking.id);
+        try {
+            await updateBooking(Number(booking.id), {
+                name: booking.name,
+                phone: booking.phone,
+                date: editDate,
+                time: editTime,
+                guests: booking.guests,
+                tableId: booking.tableId,
+                comment: booking.comment,
+            });
+            toast.success("Бронирование обновлено");
+            handleCancelEdit();
+        } catch (e: any) {
+            toast.error(e.message || "Ошибка обновления");
+        } finally {
+            setUpdatingId(null);
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Header with filters */}
@@ -115,8 +163,8 @@ export const BookingsTable: React.FC = () => {
                     <button
                         onClick={() => setStatusFilter("all")}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${statusFilter === "all"
-                                ? "bg-luxury-gold text-black"
-                                : "bg-white/5 text-white/60 hover:bg-white/10"
+                            ? "bg-luxury-gold text-black"
+                            : "bg-white/5 text-white/60 hover:bg-white/10"
                             }`}
                     >
                         Все ({statusCounts.all})
@@ -128,8 +176,8 @@ export const BookingsTable: React.FC = () => {
                                 key={status}
                                 onClick={() => setStatusFilter(status)}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${statusFilter === status
-                                        ? "bg-luxury-gold text-black"
-                                        : "bg-white/5 text-white/60 hover:bg-white/10"
+                                    ? "bg-luxury-gold text-black"
+                                    : "bg-white/5 text-white/60 hover:bg-white/10"
                                     }`}
                             >
                                 {config.label} ({statusCounts[status]})
@@ -182,6 +230,7 @@ export const BookingsTable: React.FC = () => {
                             const statusConfig =
                                 STATUS_CONFIG[booking.status as keyof typeof STATUS_CONFIG];
                             const isUpdating = updatingId === booking.id;
+                            const isEditing = editingId === booking.id;
 
                             return (
                                 <div
@@ -206,17 +255,36 @@ export const BookingsTable: React.FC = () => {
 
                                     {/* Date & Time */}
                                     <div className="md:col-span-2">
-                                        <div className="flex items-center gap-2 text-white">
-                                            <Calendar size={14} className="text-luxury-gold" />
-                                            {new Date(booking.date).toLocaleDateString("ru-RU", {
-                                                day: "2-digit",
-                                                month: "short",
-                                            })}
-                                        </div>
-                                        <div className="flex items-center gap-2 text-white/60 text-sm">
-                                            <Clock size={14} className="text-luxury-gold/60" />
-                                            {booking.time?.slice(0, 5) || booking.time}
-                                        </div>
+                                        {isEditing ? (
+                                            <div className="space-y-2">
+                                                <input
+                                                    type="date"
+                                                    value={editDate}
+                                                    onChange={(e) => setEditDate(e.target.value)}
+                                                    className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-luxury-gold"
+                                                />
+                                                <input
+                                                    type="time"
+                                                    value={editTime}
+                                                    onChange={(e) => setEditTime(e.target.value)}
+                                                    className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-luxury-gold"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="flex items-center gap-2 text-white">
+                                                    <Calendar size={14} className="text-luxury-gold" />
+                                                    {new Date(booking.date).toLocaleDateString("ru-RU", {
+                                                        day: "2-digit",
+                                                        month: "short",
+                                                    })}
+                                                </div>
+                                                <div className="flex items-center gap-2 text-white/60 text-sm">
+                                                    <Clock size={14} className="text-luxury-gold/60" />
+                                                    {booking.time?.slice(0, 5) || booking.time}
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
 
                                     {/* Details */}
@@ -226,7 +294,7 @@ export const BookingsTable: React.FC = () => {
                                             {booking.guests} гостей
                                         </div>
                                         <div className="text-white/40 text-sm">
-                                            Стол: {booking.tableId || "—"}
+                                            Стол: №{booking.tableNumber || booking.tableId || "—"}
                                         </div>
                                         {booking.comment && (
                                             <div className="text-yellow-400/70 text-xs truncate flex items-center gap-1">
@@ -255,6 +323,23 @@ export const BookingsTable: React.FC = () => {
                                                 className="animate-spin text-white/40"
                                                 size={20}
                                             />
+                                        ) : isEditing ? (
+                                            <>
+                                                <button
+                                                    onClick={() => handleSaveEdit(booking)}
+                                                    className="px-3 py-1.5 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
+                                                >
+                                                    <Save size={12} />
+                                                    Сохранить
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white/60 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
+                                                >
+                                                    <X size={12} />
+                                                    Отмена
+                                                </button>
+                                            </>
                                         ) : (
                                             <>
                                                 {booking.status === "PENDING" && (
@@ -276,13 +361,22 @@ export const BookingsTable: React.FC = () => {
                                                     </>
                                                 )}
                                                 {booking.status === "CONFIRMED" && (
-                                                    <button
-                                                        onClick={() => handleCancel(booking)}
-                                                        className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
-                                                    >
-                                                        <XCircle size={12} />
-                                                        Отменить
-                                                    </button>
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleStartEdit(booking)}
+                                                            className="px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
+                                                        >
+                                                            <Edit3 size={12} />
+                                                            Изменить
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleCancel(booking)}
+                                                            className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
+                                                        >
+                                                            <XCircle size={12} />
+                                                            Отменить
+                                                        </button>
+                                                    </>
                                                 )}
                                                 {booking.status === "CANCELLED" && (
                                                     <span className="text-white/30 text-xs">

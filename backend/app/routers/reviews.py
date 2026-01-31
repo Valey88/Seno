@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import get_current_admin_user
+from app.auth import get_current_admin_user, get_current_user
 from app.database import get_db
 from app.models import Review, User
 from app.schemas import ReviewCreate, ReviewRead
@@ -41,7 +41,22 @@ def map_review_to_schema(review: Review) -> ReviewRead:
 
 
 @router.post("", response_model=ReviewRead, status_code=status.HTTP_201_CREATED)
-async def create_review(review_data: ReviewCreate, db: AsyncSession = Depends(get_db)):
+async def create_review(
+    review_data: ReviewCreate, 
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Create a new review.
+    IMPORTANT: Only users authenticated via Yandex OAuth can create reviews.
+    """
+    # Check if user is authenticated via Yandex
+    if not current_user.oauth_provider or current_user.oauth_provider != "yandex":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Оставить отзыв могут только пользователи, вошедшие через Яндекс"
+        )
+    
     # Сериализуем список картинок в строку JSON для БД
     images_json_str = json.dumps(review_data.images) if review_data.images else "[]"
 
@@ -50,11 +65,11 @@ async def create_review(review_data: ReviewCreate, db: AsyncSession = Depends(ge
     should_auto_approve = review_data.rating >= 4
 
     review = Review(
-        author=review_data.author,
+        author=current_user.name or review_data.author or "Гость Яндекс",
         rating=review_data.rating,
         text=review_data.text if review_data.text else "",
         images_json=images_json_str,
-        is_approved=should_auto_approve,  # <-- Используем переменную
+        is_approved=should_auto_approve,
     )
 
     db.add(review)

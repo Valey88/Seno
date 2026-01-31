@@ -195,3 +195,144 @@ async def register_user(
     
     return {"access_token": access_token, "token_type": "bearer"}
 
+
+# ============ YANDEX OAUTH ============
+
+@router.get("/yandex")
+async def yandex_login():
+    """
+    Redirect to Yandex OAuth authorization page.
+    """
+    if not settings.yandex_client_id:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Yandex OAuth не настроен. Добавьте YANDEX_CLIENT_ID в .env"
+        )
+    
+    yandex_auth_url = (
+        f"https://oauth.yandex.ru/authorize"
+        f"?response_type=code"
+        f"&client_id={settings.yandex_client_id}"
+        f"&redirect_uri={settings.yandex_redirect_uri}"
+    )
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=yandex_auth_url)
+
+
+@router.get("/yandex/callback")
+async def yandex_callback(
+    code: str = None,
+    error: str = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Handle Yandex OAuth callback.
+    Exchange code for token, get user info, create/find user, return JWT.
+    """
+    import httpx
+    from fastapi.responses import RedirectResponse
+    
+    if error:
+        return RedirectResponse(url=f"http://localhost:3000/?auth_error={error}")
+    
+    if not code:
+        return RedirectResponse(url="http://localhost:3000/?auth_error=no_code")
+    
+    # Exchange code for access token
+    try:
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(
+                "https://oauth.yandex.ru/token",
+                data={
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "client_id": settings.yandex_client_id,
+                    "client_secret": settings.yandex_client_secret,
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"}
+            )
+            
+            if token_response.status_code != 200:
+                return RedirectResponse(
+                    url=f"http://localhost:3000/?auth_error=token_exchange_failed"
+                )
+            
+            token_data = token_response.json()
+            yandex_access_token = token_data.get("access_token")
+            
+            # Get user info from Yandex
+            user_response = await client.get(
+                "https://login.yandex.ru/info",
+                headers={"Authorization": f"OAuth {yandex_access_token}"}
+            )
+            
+            if user_response.status_code != 200:
+                return RedirectResponse(
+                    url=f"http://localhost:3000/?auth_error=user_info_failed"
+                )
+            
+            yandex_user = user_response.json()
+            
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Yandex OAuth error: {e}")
+        return RedirectResponse(url=f"http://localhost:3000/?auth_error=network_error")
+    
+    # Find or create user
+    yandex_id = yandex_user.get("id")
+    yandex_email = yandex_user.get("default_email", "")
+    yandex_name = yandex_user.get("real_name") or yandex_user.get("display_name") or "Пользователь"
+    
+    # Try to find by yandex_id
+    result = await db.execute(select(User).where(User.yandex_id == str(yandex_id)))
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        # Try to find by email
+        if yandex_email:
+            result = await db.execute(select(User).where(User.email == yandex_email.lower()))
+            user = result.scalar_one_or_none()
+            
+            if user:
+                # Link existing user with Yandex
+                user.yandex_id = str(yandex_id)
+                user.oauth_provider = "yandex"
+                await db.commit()
+    
+    if not user:
+        # Create new user
+        # Generate unique username from yandex_id
+        username = f"yandex_{yandex_id}"
+        
+        # Generate a random password hash for OAuth users
+        # (They won't use password login, but DB has NOT NULL constraint)
+        import secrets
+        random_password = secrets.token_urlsafe(32)
+        
+        user = User(
+            username=username,
+            password_hash=get_password_hash(random_password),
+            email=yandex_email.lower() if yandex_email else None,
+            name=yandex_name,
+            role=UserRole.USER,
+            is_verified=True,
+            yandex_id=str(yandex_id),
+            oauth_provider="yandex"
+        )
+        
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    
+    # Generate JWT token
+    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    
+    # Redirect to frontend with token
+    return RedirectResponse(
+        url=f"http://localhost:3000/?access_token={access_token}"
+    )

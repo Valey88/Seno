@@ -15,6 +15,9 @@ interface AuthState {
     password: string,
   ) => Promise<{ success: boolean; error?: string }>;
   register: (data: any) => Promise<{ success: boolean; error?: string }>;
+  requestEmailVerification: (email: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithYandex: () => void;
+  handleOAuthCallback: (token: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>; // Глобальная проверка
 }
@@ -58,6 +61,7 @@ export const useAuthStore = create<AuthState>()(
             phone: userData.username,
             email: userData.email,
             role: userData.role === "ADMIN" ? "ADMIN" : "USER",
+            oauthProvider: userData.oauth_provider,
           };
 
           set({ user, isLoading: false });
@@ -98,6 +102,7 @@ export const useAuthStore = create<AuthState>()(
             phone: userData.username,
             email: userData.email,
             role: userData.role === "ADMIN" ? "ADMIN" : "USER",
+            oauthProvider: userData.oauth_provider,
           };
 
           set({ user, isLoading: false });
@@ -108,6 +113,50 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
           });
           return { success: false, error: error.response?.data?.detail };
+        }
+      },
+
+      requestEmailVerification: async (email: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          await apiClient.post("/auth/request-verification", { email });
+          set({ isLoading: false });
+          return { success: true };
+        } catch (error: any) {
+          set({
+            error: error.response?.data?.detail || "Ошибка отправки кода",
+            isLoading: false,
+          });
+          return { success: false, error: error.response?.data?.detail };
+        }
+      },
+
+      loginWithYandex: () => {
+        // Redirect to Yandex OAuth endpoint
+        window.location.href = "http://localhost:8000/api/auth/yandex";
+      },
+
+      handleOAuthCallback: async (token: string) => {
+        set({ isLoading: true, token });
+        try {
+          const userResponse = await apiClient.get("/auth/me", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const userData = userResponse.data;
+
+          const user: User = {
+            id: userData.id.toString(),
+            name: userData.name || userData.username,
+            phone: userData.username,
+            email: userData.email,
+            role: userData.role === "ADMIN" ? "ADMIN" : "USER",
+            oauthProvider: userData.oauth_provider,
+          };
+
+          set({ user, isLoading: false, isInitialized: true });
+        } catch (error) {
+          console.error("OAuth callback error:", error);
+          set({ user: null, token: null, isLoading: false, isInitialized: true });
         }
       },
 
@@ -137,6 +186,7 @@ export const useAuthStore = create<AuthState>()(
             phone: userData.username,
             email: userData.email,
             role: userData.role === "ADMIN" ? "ADMIN" : "USER",
+            oauthProvider: userData.oauth_provider,
           };
 
           set({ user, isInitialized: true });

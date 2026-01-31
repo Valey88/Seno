@@ -72,13 +72,12 @@ export const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout }) => {
                   </span>
                   <span
                     className={`px-2 py-0.5 rounded border text-[10px] uppercase tracking-wider
-                                        ${
-                                          item.status === "CONFIRMED"
-                                            ? "border-green-500/30 text-green-400 bg-green-500/5"
-                                            : item.status === "CANCELLED"
-                                              ? "border-red-500/30 text-red-400 bg-red-500/5"
-                                              : "border-yellow-500/30 text-yellow-400 bg-yellow-500/5"
-                                        }`}
+                                        ${item.status === "CONFIRMED"
+                        ? "border-green-500/30 text-green-400 bg-green-500/5"
+                        : item.status === "CANCELLED"
+                          ? "border-red-500/30 text-red-400 bg-red-500/5"
+                          : "border-yellow-500/30 text-yellow-400 bg-yellow-500/5"
+                      }`}
                   >
                     {item.status === "CONFIRMED"
                       ? "Подтверждено"
@@ -91,7 +90,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout }) => {
                   <span className="flex items-center gap-1">
                     <Clock size={12} /> {item.time}
                   </span>
-                  <span>Стол №{item.tableId}</span>
+                  <span>Стол №{item.tableNumber || item.tableId}</span>
                   <span>{item.guests} чел.</span>
                 </div>
               </div>

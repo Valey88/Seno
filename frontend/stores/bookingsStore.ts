@@ -76,6 +76,7 @@ export const useBookingsStore = create<BookingsState>((set, get) => ({
         name: item.user_name,
         phone: item.user_phone,
         tableId: item.table_id,
+        tableNumber: item.table_number,
         status: item.status as BookingStatus,
         depositAmount: item.deposit_amount,
         createdAt: new Date(item.created_at),

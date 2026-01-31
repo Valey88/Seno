@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { GlassCard } from "@/components/GlassCard"; // Убедитесь, что путь верный
+import { GlassCard } from "@/components/GlassCard";
 import { Review } from "@/types";
 import { useReviewsStore } from "@/stores/reviewsStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -17,10 +17,14 @@ import {
   Clock,
   AlertCircle,
   Loader2,
+  ExternalLink,
+  CheckCircle,
 } from "lucide-react";
 
+// Yandex Maps review URL for Senoval
+const YANDEX_MAPS_REVIEW_URL = "https://yandex.ru/maps/org/senoval/1398951724/reviews/?add-review=true";
+
 interface ReviewsViewProps {
-  // Мы больше не принимаем currentUser через пропсы, берем из стора
   onOpenAuth: () => void;
 }
 
@@ -34,6 +38,19 @@ const readFileAsDataURL = (file: File): Promise<string> => {
   });
 };
 
+// Yandex Login Button Component
+const YandexLoginButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+  <button
+    onClick={onClick}
+    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#FC3F1D] hover:bg-[#e63917] text-white text-sm font-medium transition-colors"
+  >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.4 22V13.9H10.5V22H7V7.08C7 4.2 8.8 2 12.5 2C16 2 17.6 3.8 17.6 6.3C17.6 8.3 16.5 9.7 14.6 10.5L18.2 22H14.4L11.5 11.6H12.4V22ZM12.4 9.1C13.8 9.1 14.5 8.3 14.5 6.8C14.5 5.3 13.8 4.5 12.4 4.5C10.9 4.5 10.5 5.4 10.5 7V9.1H12.4Z" />
+    </svg>
+    Войти через Яндекс
+  </button>
+);
+
 const ReviewsView: React.FC<ReviewsViewProps> = ({ onOpenAuth }) => {
   // 1. Достаем данные из Auth Store (пользователь и флаг инициализации)
   const { user, isInitialized } = useAuthStore();
@@ -41,8 +58,12 @@ const ReviewsView: React.FC<ReviewsViewProps> = ({ onOpenAuth }) => {
   // 2. Достаем методы работы с отзывами
   const { reviews, fetchReviews, createReview, isLoading } = useReviewsStore();
 
+  // Check if user can leave reviews (Yandex OAuth only)
+  const canLeaveReview = user?.oauthProvider === 'yandex';
+
   // Локальные стейты формы
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newText, setNewText] = useState("");
   const [newRating, setNewRating] = useState(5);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
@@ -81,7 +102,6 @@ const ReviewsView: React.FC<ReviewsViewProps> = ({ onOpenAuth }) => {
 
     const newImages: string[] = [];
     for (const file of files) {
-      // Простая проверка типа
       if (!file.type.startsWith("image/")) continue;
 
       try {
@@ -118,7 +138,7 @@ const ReviewsView: React.FC<ReviewsViewProps> = ({ onOpenAuth }) => {
   const openLightbox = (imgSrc: string) => {
     setLightboxImage(imgSrc);
     setLightboxOpen(true);
-    document.body.style.overflow = "hidden"; // Блокируем скролл страницы
+    document.body.style.overflow = "hidden";
   };
 
   const closeLightbox = () => {
@@ -133,7 +153,7 @@ const ReviewsView: React.FC<ReviewsViewProps> = ({ onOpenAuth }) => {
     e.preventDefault();
     setSubmitError(null);
 
-    if (!user) {
+    if (!user || !canLeaveReview) {
       onOpenAuth();
       return;
     }
@@ -171,19 +191,13 @@ const ReviewsView: React.FC<ReviewsViewProps> = ({ onOpenAuth }) => {
       setNewRating(5);
       setSelectedImages([]);
       setIsFormOpen(false);
-
-      // Уведомление пользователя
-      if (newRating <= 3) {
-        alert(
-          "Спасибо! Ваш отзыв отправлен на модерацию администратору (так как оценка ниже 4).",
-        );
-      }
+      setShowSuccessModal(true); // Show success modal with Yandex button
     } else {
       setSubmitError(result.error || "Произошла ошибка при отправке.");
     }
   };
 
-  // Если авторизация еще не проверена (при загрузке страницы), показываем лоадер, чтобы не мигала кнопка входа
+  // Если авторизация еще не проверена, показываем лоадер
   if (!isInitialized) {
     return (
       <div className="min-h-screen pt-32 pb-20 flex justify-center">
@@ -216,6 +230,50 @@ const ReviewsView: React.FC<ReviewsViewProps> = ({ onOpenAuth }) => {
               onClick={(e) => e.stopPropagation()}
             />
           </div>
+        </div>
+      )}
+
+      {/* --- SUCCESS MODAL with Yandex Maps Button --- */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 animate-in fade-in duration-300">
+          <GlassCard className="max-w-md mx-4 text-center animate-in zoom-in-95 duration-300">
+            <div className="mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                <CheckCircle size={32} className="text-green-400" />
+              </div>
+              <h3 className="font-serif text-2xl text-white mb-2">Спасибо за отзыв!</h3>
+              <p className="text-white/60 text-sm">
+                Ваш отзыв успешно опубликован на нашем сайте.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-[#FC3F1D]/10 border border-[#FC3F1D]/30">
+                <p className="text-white/80 text-sm mb-3">
+                  Помогите нам стать лучше — оставьте отзыв на Яндекс.Картах!
+                </p>
+                <a
+                  href={YANDEX_MAPS_REVIEW_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#FC3F1D] hover:bg-[#e63917] text-white text-sm font-medium transition-colors"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.4 22V13.9H10.5V22H7V7.08C7 4.2 8.8 2 12.5 2C16 2 17.6 3.8 17.6 6.3C17.6 8.3 16.5 9.7 14.6 10.5L18.2 22H14.4L11.5 11.6H12.4V22ZM12.4 9.1C13.8 9.1 14.5 8.3 14.5 6.8C14.5 5.3 13.8 4.5 12.4 4.5C10.9 4.5 10.5 5.4 10.5 7V9.1H12.4Z" />
+                  </svg>
+                  Оставить отзыв на Яндекс
+                  <ExternalLink size={14} />
+                </a>
+              </div>
+
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="text-sm text-white/40 hover:text-white transition-colors"
+              >
+                Закрыть
+              </button>
+            </div>
+          </GlassCard>
         </div>
       )}
 
@@ -261,20 +319,27 @@ const ReviewsView: React.FC<ReviewsViewProps> = ({ onOpenAuth }) => {
         {/* --- CREATE REVIEW SECTION --- */}
         <div className="mb-16">
           {!user ? (
-            // Вариант для НЕ авторизованных
+            // Вариант для НЕ авторизованных - показать кнопку входа через Яндекс
             <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center backdrop-blur-md animate-in fade-in">
               <p className="text-white/60 mb-6 font-light">
-                Поделитесь своими впечатлениями о посещении
+                Оставлять отзывы могут только пользователи, вошедшие через Яндекс
               </p>
-              <button
-                onClick={onOpenAuth}
-                className="inline-flex items-center gap-3 px-8 py-3 bg-luxury-gold text-black font-semibold uppercase tracking-widest text-xs rounded-lg hover:bg-white transition-all"
-              >
-                <Lock size={16} /> Войти, чтобы написать
-              </button>
+              <YandexLoginButton onClick={onOpenAuth} />
+            </div>
+          ) : !canLeaveReview ? (
+            // Пользователь авторизован, но НЕ через Яндекс
+            <div className="bg-white/5 border border-yellow-500/20 rounded-2xl p-8 text-center backdrop-blur-md animate-in fade-in">
+              <div className="flex items-center justify-center gap-3 mb-4 text-yellow-400">
+                <AlertCircle size={24} />
+                <span className="text-lg">Оставлять отзывы могут только пользователи Яндекс</span>
+              </div>
+              <p className="text-white/60 mb-6 font-light text-sm">
+                Вы вошли через {user.oauthProvider || 'email'}. Для публикации отзывов необходимо войти через Яндекс.
+              </p>
+              <YandexLoginButton onClick={onOpenAuth} />
             </div>
           ) : !isFormOpen ? (
-            // Кнопка "Оставить отзыв" (Авторизован, форма закрыта)
+            // Кнопка "Оставить отзыв" (Авторизован через Яндекс, форма закрыта)
             <button
               onClick={() => setIsFormOpen(true)}
               className="w-full py-6 rounded-2xl border border-dashed border-white/20 text-white/40 hover:text-luxury-gold hover:border-luxury-gold/50 hover:bg-luxury-gold/5 transition-all uppercase tracking-widest text-sm font-medium flex flex-col items-center gap-2 group animate-in fade-in"
@@ -467,7 +532,6 @@ const ReviewsView: React.FC<ReviewsViewProps> = ({ onOpenAuth }) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
             {reviews.map((review) => {
-              // Поддержка как массива images, так и старого поля image
               const imagesList =
                 review.images && review.images.length > 0
                   ? review.images

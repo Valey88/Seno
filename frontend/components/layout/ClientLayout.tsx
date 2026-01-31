@@ -15,11 +15,29 @@ export default function ClientLayout({
 }) {
   const pathname = usePathname(); // 2. Получаем текущий путь
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const { checkAuth } = useAuthStore();
+  const { checkAuth, handleOAuthCallback } = useAuthStore();
   const { fetchMenu } = useMenuStore();
 
   useEffect(() => {
-    checkAuth();
+    // Check for OAuth callback token in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get("access_token");
+    const authError = urlParams.get("auth_error");
+
+    if (accessToken) {
+      // Handle OAuth callback
+      handleOAuthCallback(accessToken);
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (authError) {
+      console.error("Auth error:", authError);
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      // Normal auth check
+      checkAuth();
+    }
+
     fetchMenu();
   }, []);
 
@@ -32,7 +50,7 @@ export default function ClientLayout({
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
-        onLoginSuccess={() => {}}
+        onLoginSuccess={() => { }}
       />
 
       {/* Фон и Хедер показываем ТОЛЬКО если это НЕ админка */}

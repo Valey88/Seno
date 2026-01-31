@@ -54,13 +54,13 @@ export const BookingsKanban: React.FC = () => {
 
                                         {/* Status Switcher (Quick Move) */}
                                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                             <select
+                                            <select
                                                 className="bg-black text-[10px] text-white border border-white/20 rounded p-1 outline-none cursor-pointer"
                                                 value={booking.status}
                                                 onChange={(e) => handleStatusChange(Number(booking.id), e.target.value)}
-                                             >
+                                            >
                                                 {columns.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                                             </select>
+                                            </select>
                                         </div>
 
                                         <div className="flex items-center gap-2 mb-3">
@@ -77,21 +77,21 @@ export const BookingsKanban: React.FC = () => {
 
                                         <div className="bg-black/30 rounded p-2 mb-3 grid grid-cols-2 gap-2">
                                             <div className="text-xs text-white/70 flex items-center gap-1.5">
-                                                <Calendar size={12} className="text-luxury-gold"/>
-                                                {new Date(booking.date).toLocaleDateString(undefined, {day: '2-digit', month: 'short'})}
+                                                <Calendar size={12} className="text-luxury-gold" />
+                                                {new Date(booking.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
                                             </div>
                                             <div className="text-xs text-white/70 flex items-center gap-1.5">
-                                                <Clock size={12} className="text-luxury-gold"/>
+                                                <Clock size={12} className="text-luxury-gold" />
                                                 {booking.time}
                                             </div>
                                         </div>
 
                                         <div className="flex justify-between items-center text-xs">
                                             <span className="bg-white/5 px-2 py-1 rounded text-white/60">
-                                                Стол: {booking.tableId || '?'}
+                                                Стол: №{booking.tableNumber || booking.tableId || '?'}
                                             </span>
                                             <span className="flex items-center gap-1 text-white/60">
-                                                <User size={12}/> {booking.guests}
+                                                <User size={12} /> {booking.guests}
                                             </span>
                                         </div>
 

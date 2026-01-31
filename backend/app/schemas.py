@@ -54,6 +54,7 @@ class UserRead(BaseModel):
     name: str | None
     role: UserRole
     is_verified: bool
+    oauth_provider: str | None = None
 
     class Config:
         from_attributes = True
@@ -231,25 +232,29 @@ class BookingCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_booking_time_advance(self):
-        """Validate that booking is made at least 3 hours in advance."""
+        """Validate that booking is made at least 3 hours in advance using Moscow timezone."""
         from datetime import datetime, timedelta
+        from zoneinfo import ZoneInfo
 
         # Если self.date или self.time не установлены из-за ошибок валидации выше, просто возвращаем self
         if not hasattr(self, "date") or not hasattr(self, "time"):
             return self
 
-        booking_datetime = datetime.combine(self.date, self.time)
-        now = datetime.now()
+        # Используем московское время (часовой пояс ресторана)
+        moscow_tz = ZoneInfo("Europe/Moscow")
+        now = datetime.now(moscow_tz)
+        
+        # Создаем datetime бронирования с московским часовым поясом
+        booking_datetime = datetime.combine(self.date, self.time).replace(tzinfo=moscow_tz)
         min_advance = timedelta(hours=3)
 
         if self.date < now.date():
             raise ValueError("Дата бронирования не может быть в прошлом")
 
-        if self.date == now.date():
-            if booking_datetime < now + min_advance:
-                raise ValueError(
-                    "Бронирование должно быть сделано минимум за 3 часа до выбранного времени"
-                )
+        if booking_datetime < now + min_advance:
+            raise ValueError(
+                "Бронирование должно быть сделано минимум за 3 часа до выбранного времени"
+            )
 
         return self
 
@@ -266,6 +271,7 @@ class BookingRead(BaseModel):
     status: BookingStatus
     deposit_amount: float
     table_id: Optional[int]
+    table_number: Optional[str] = None  # Custom table number for display
     comment: Optional[str]
     created_at: datetime
 

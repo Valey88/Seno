@@ -55,12 +55,16 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
-    password_hash = Column(String, nullable=False)
+    password_hash = Column(String, nullable=True)  # Nullable for OAuth users
     email = Column(String, nullable=True, index=True)
     name = Column(String, nullable=True)
     role = Column(SQLEnum(UserRole), default=UserRole.USER, nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # OAuth fields
+    yandex_id = Column(String, nullable=True, index=True, unique=True)
+    oauth_provider = Column(String, nullable=True)  # 'yandex', 'email', etc.
 
 
 class EmailVerificationCode(Base):
