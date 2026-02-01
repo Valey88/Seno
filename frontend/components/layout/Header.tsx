@@ -76,25 +76,19 @@ export const Header: React.FC<NavigationProps> = ({ onOpenAuth }) => {
           {/* Right Actions */}
           <div className="flex items-center gap-6 z-50">
             {user ? (
-              <div className="hidden md:flex items-center gap-2 text-white/70 hover:text-white transition-colors cursor-pointer">
-                <Link
-                  style={{
-                    display: "flex",
-                    gridGap: "5px",
-                    alignItems: "center",
-                  }}
-                  href="/profile"
-                >
-                  <UserCircle size={20} />
-                  <span className="text-xs uppercase tracking-wider">
-                    {user.name.split(" ")[0]}
-                  </span>
-                </Link>
-              </div>
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 text-white/70 hover:text-white transition-colors cursor-pointer"
+              >
+                <UserCircle size={20} />
+                <span className="hidden md:block text-xs uppercase tracking-wider">
+                  {user.name.split(" ")[0]}
+                </span>
+              </Link>
             ) : (
               <button
                 onClick={onOpenAuth}
-                className="hidden md:flex text-white/70 hover:text-luxury-gold transition-colors"
+                className="flex text-white/70 hover:text-luxury-gold transition-colors"
                 title="Войти"
               >
                 <LogIn size={20} />

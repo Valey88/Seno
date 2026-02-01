@@ -202,8 +202,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
 
       {/* GALLERY STRIP */}
       <section className="py-0">
-        <div className="grid grid-cols-2 md:grid-cols-4 h-64 md:h-80">
-          <div className="relative group overflow-hidden">
+        <div className="grid grid-cols-2 md:grid-cols-4 md:h-80">
+          <div className="relative group overflow-hidden h-48 md:h-auto">
             <Image
               src="/XXXL.webp"
               className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"
@@ -211,18 +211,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
               fill
             />
           </div>
-          <div className="relative group overflow-hidden">
+          <div className="relative group overflow-hidden h-48 md:h-auto">
             <Image
               src="x.webp"
               className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"
               alt="Detail 2"
               fill
             />
-            {/*<div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <Instagram className="text-white w-8 h-8 drop-shadow-lg" />
-            </div>*/}
           </div>
-          <div className="relative group overflow-hidden">
+          <div className="relative group overflow-hidden h-48 md:h-auto">
             <Image
               src="/xe.webp"
               className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"
@@ -230,17 +227,17 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
               fill
             />
           </div>
-          <div className="relative group overflow-hidden bg-luxury-charcoal flex items-center justify-center p-8 text-center border-l border-white/5">
+          <div className="relative group overflow-hidden bg-luxury-charcoal flex items-center justify-center p-4 md:p-8 text-center border-l border-white/5 h-48 md:h-auto">
             <div>
-              <h4 className="font-serif text-2xl text-white mb-2">
+              <h4 className="font-serif text-lg md:text-2xl text-white mb-2 leading-tight">
                 Следите за нами
               </h4>
-              <p className="text-white/40 text-xs uppercase tracking-widest mb-6">
+              <p className="text-white/40 text-[10px] md:text-xs uppercase tracking-widest mb-3 md:mb-6 break-words">
                 @traktirsenoval
               </p>
               <a
                 href="https://vk.com/traktirsenoval"
-                className="text-luxury-gold border-b border-luxury-gold pb-1 hover:text-white hover:border-white transition-colors text-xs uppercase tracking-widest"
+                className="text-luxury-gold border-b border-luxury-gold pb-1 hover:text-white hover:border-white transition-colors text-[10px] md:text-xs uppercase tracking-widest"
               >
                 VK
               </a>

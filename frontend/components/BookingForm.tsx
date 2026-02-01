@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { useForm, Controller } from "react-hook-form";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -14,10 +15,71 @@ import { toast } from "sonner";
 import { AxiosError } from "axios";
 
 import { HallMap } from "./HallMap";
-import apiClient from "@/services/api"; // Импортируем наш настроенный клиент
+import apiClient from "@/services/api";
 import { Table } from "../types";
 
 type Step = "date-guests" | "time" | "table" | "details" | "payment";
+
+// Типы для формы контактов
+interface ContactFormData {
+  name: string;
+  phone: string;
+  comment: string;
+}
+
+// Функция форматирования телефона в +7 (999) 888-77-44
+const formatPhoneNumber = (value: string): string => {
+  // Удаляем всё кроме цифр
+  let digits = value.replace(/\D/g, "");
+
+  if (!digits) return "";
+
+  // Если первая цифра 8 или не 7, заменяем на 7
+  if (digits[0] === "8") {
+    digits = "7" + digits.slice(1);
+  } else if (digits[0] !== "7") {
+    digits = "7" + digits;
+  }
+
+  // Ограничиваем до 11 цифр
+  if (digits.length > 11) digits = digits.slice(0, 11);
+
+  // Формируем маску +7 (999) 888-77-44
+  let formatted = "+7";
+
+  if (digits.length > 1) {
+    formatted += " (" + digits.slice(1, 4);
+  }
+  if (digits.length >= 4) {
+    formatted += ") " + digits.slice(4, 7);
+  }
+  if (digits.length >= 7) {
+    formatted += "-" + digits.slice(7, 9);
+  }
+  if (digits.length >= 9) {
+    formatted += "-" + digits.slice(9, 11);
+  }
+
+  return formatted;
+};
+
+// Валидатор телефона - проверяет полный формат
+const validatePhone = (value: string): boolean | string => {
+  if (!value) return "Введите номер телефона";
+
+  // Полный формат: +7 (999) 888-77-44 = 18 символов
+  if (value.length !== 18) {
+    return "Введите полный номер телефона";
+  }
+
+  // Проверяем формат регуляркой
+  const phoneRegex = /^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/;
+  if (!phoneRegex.test(value)) {
+    return "Неверный формат номера";
+  }
+
+  return true;
+};
 
 export const BookingForm: React.FC = () => {
   const [step, setStep] = useState<Step>("date-guests");
@@ -27,7 +89,21 @@ export const BookingForm: React.FC = () => {
   const [guests, setGuests] = useState<number>(2);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
-  const [contact, setContact] = useState({ name: "", phone: "", comment: "" });
+
+  // React Hook Form для контактных данных
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+    watch,
+  } = useForm<ContactFormData>({
+    mode: "onChange",
+    defaultValues: {
+      name: "",
+      phone: "",
+      comment: "",
+    },
+  });
 
   // Данные от API
   const [tables, setTables] = useState<Table[]>([]);
@@ -39,7 +115,6 @@ export const BookingForm: React.FC = () => {
   useEffect(() => {
     const fetchTables = async () => {
       try {
-        // Используем apiClient, путь относительный (BaseURL уже содержит /api)
         const { data } = await apiClient.get<Table[]>("/tables");
         setTables(data);
       } catch (e) {
@@ -59,7 +134,6 @@ export const BookingForm: React.FC = () => {
       try {
         const dateStr = format(date, "yyyy-MM-dd");
 
-        // Передаем параметры через объект params
         const { data } = await apiClient.get(
           `/bookings/availability/${dateStr}`,
           {
@@ -87,48 +161,41 @@ export const BookingForm: React.FC = () => {
   }, [date, guests]);
 
   // --- Логика сабмита ---
-  const handleSubmit = async () => {
+  const onSubmit = async (formData: ContactFormData) => {
     if (!selectedTime || !selectedTableId) return;
 
     setLoading(true);
     try {
       const payload = {
-        user_name: contact.name,
-        user_phone: contact.phone,
+        user_name: formData.name,
+        user_phone: formData.phone, // Уже в формате +7 (999) 888-77-44
         date: format(date, "yyyy-MM-dd"),
         time: selectedTime,
         guest_count: guests,
         table_id: selectedTableId,
-        comment: contact.comment,
+        comment: formData.comment,
       };
 
       const { data } = await apiClient.post("/bookings", payload);
 
       // Переход на оплату
       if (data.payment_url) {
-        // window.location.href = data.payment_url;
-        // FOR TESTING ONLY:
         window.location.href = `/payment/test?booking_id=${data.booking_id}&amount=500`;
       } else {
         toast.success("Бронирование создано!");
       }
     } catch (e) {
       console.error("Booking Error:", e);
-      const error = e as AxiosError<any>; // Используем any, так как структура ошибки может меняться
+      const error = e as AxiosError<any>;
       const detail = error.response?.data?.detail;
 
       let errorMessage = "Неизвестная ошибка бронирования";
 
-      // Логика извлечения текста ошибки
       if (typeof detail === "string") {
-        // 1. Если пришла просто строка
         errorMessage = detail;
       } else if (Array.isArray(detail) && detail.length > 0) {
-        // 2. Если пришел массив ошибок валидации (обычно FastAPI)
-        // Берем поле 'msg' из первого элемента
         errorMessage = detail[0].msg || "Ошибка валидации данных";
       } else if (detail && typeof detail === "object" && detail.msg) {
-        // 3. Если пришел одиночный объект ошибки
         errorMessage = detail.msg;
       }
 
@@ -138,42 +205,9 @@ export const BookingForm: React.FC = () => {
     }
   };
 
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
-
-    // Если пользователь стирает всё, оставляем пустую строку
-    if (!value) {
-      setContact({ ...contact, phone: "" });
-      return;
-    }
-
-    // Если первая цифра 8, 9 или любая другая (кроме 7), меняем на 7
-    if (value[0] !== '7') {
-      value = '7' + value;
-    }
-
-    // Ограничиваем длину до 11 цифр (7 + 10 цифр)
-    if (value.length > 11) value = value.slice(0, 11);
-
-    // Формируем маску
-    let formatted = "+7";
-
-    if (value.length > 1) {
-      formatted += " (" + value.slice(1, 4);
-    }
-    if (value.length >= 5) {
-      formatted += ") " + value.slice(4, 7);
-    }
-    if (value.length >= 8) {
-      formatted += " " + value.slice(7, 9);
-    }
-    if (value.length >= 10) {
-      formatted += " " + value.slice(9, 11);
-    }
-
-    setContact({ ...contact, phone: formatted });
-  };
+  // Наблюдаем за полями для валидации кнопки
+  const watchedName = watch("name");
+  const watchedPhone = watch("phone");
 
   return (
     <div className="min-h-[500px] flex flex-col gap-8 p-6 md:p-8 bg-[#151515] rounded-xl">
@@ -271,7 +305,6 @@ export const BookingForm: React.FC = () => {
                       disabled={!slot.is_available}
                       onClick={() => {
                         setSelectedTime(slot.time);
-                        // Set occupied tables for this slot
                         setOccupiedTables(slot.occupied_table_ids || []);
                         setStep("table");
                       }}
@@ -327,7 +360,6 @@ export const BookingForm: React.FC = () => {
                 tables={tables}
                 selectedTableId={selectedTableId}
                 onSelectTable={setSelectedTableId}
-                // Можно передать список занятых, если API их возвращает отдельно
                 occupiedTableIds={occupiedTables}
               />
             </div>
@@ -335,7 +367,7 @@ export const BookingForm: React.FC = () => {
         )}
 
         {step === "details" && (
-          <div className="max-w-md mx-auto space-y-6 animate-in fade-in">
+          <form onSubmit={handleSubmit(onSubmit)} className="max-w-md mx-auto space-y-6 animate-in fade-in">
             <div className="text-center mb-6">
               <h3 className="text-2xl font-serif text-white mb-2">
                 Подтверждение
@@ -348,35 +380,70 @@ export const BookingForm: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              <input
-                placeholder="Ваше имя"
-                className="w-full bg-white/5 border border-white/10 p-3 rounded text-white"
-                value={contact.name}
-                onChange={(e) =>
-                  setContact({ ...contact, name: e.target.value })
-                }
+              {/* Поле имени */}
+              <Controller
+                name="name"
+                control={control}
+                rules={{ required: "Введите ваше имя" }}
+                render={({ field }) => (
+                  <div>
+                    <input
+                      {...field}
+                      placeholder="Ваше имя"
+                      className={`w-full bg-white/5 border p-3 rounded text-white ${errors.name ? "border-red-500" : "border-white/10"
+                        } focus:border-luxury-gold outline-none transition-colors`}
+                    />
+                    {errors.name && (
+                      <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>
+                    )}
+                  </div>
+                )}
               />
-              <input
-                placeholder="Телефон (+7...)"
-                className="w-full bg-white/5 border border-white/10 p-3 rounded text-white"
-                value={contact.phone}
-                onChange={(e) =>
-                  setContact({ ...contact, phone: e.target.value })
-                }
+
+              {/* Поле телефона с маской */}
+              <Controller
+                name="phone"
+                control={control}
+                rules={{ validate: validatePhone }}
+                render={({ field: { onChange, value, ...field } }) => (
+                  <div>
+                    <input
+                      {...field}
+                      value={value}
+                      onChange={(e) => {
+                        const formatted = formatPhoneNumber(e.target.value);
+                        onChange(formatted);
+                      }}
+                      type="tel"
+                      placeholder="+7 (___) ___-__-__"
+                      maxLength={18}
+                      className={`w-full bg-white/5 border p-3 rounded text-white ${errors.phone ? "border-red-500" : "border-white/10"
+                        } focus:border-luxury-gold outline-none transition-colors`}
+                    />
+                    {errors.phone && (
+                      <p className="text-red-400 text-xs mt-1">{errors.phone.message}</p>
+                    )}
+                  </div>
+                )}
               />
-              <textarea
-                placeholder="Комментарий (необязательно)"
-                className="w-full bg-white/5 border border-white/10 p-3 rounded text-white h-24"
-                value={contact.comment}
-                onChange={(e) =>
-                  setContact({ ...contact, comment: e.target.value })
-                }
+
+              {/* Комментарий */}
+              <Controller
+                name="comment"
+                control={control}
+                render={({ field }) => (
+                  <textarea
+                    {...field}
+                    placeholder="Комментарий (необязательно)"
+                    className="w-full bg-white/5 border border-white/10 p-3 rounded text-white h-24 focus:border-luxury-gold outline-none transition-colors"
+                  />
+                )}
               />
             </div>
 
             <button
-              onClick={handleSubmit}
-              disabled={loading || !contact.phone || !contact.name}
+              type="submit"
+              disabled={loading || !isValid}
               className="w-full bg-luxury-gold text-black py-4 rounded-lg font-bold uppercase tracking-widest hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
@@ -386,12 +453,13 @@ export const BookingForm: React.FC = () => {
               )}
             </button>
             <button
+              type="button"
               onClick={() => setStep("table")}
               className="w-full text-center text-sm text-white/30 hover:text-white mt-2"
             >
               Назад
             </button>
-          </div>
+          </form>
         )}
       </div>
     </div>

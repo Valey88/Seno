@@ -33,6 +33,39 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
         }
     }, [isOpen]);
 
+    // Форматирование телефона в формат +7 (999) 888-77-44
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let value = e.target.value.replace(/\D/g, "");
+
+        if (!value) {
+            setFormData({ ...formData, phone: "" });
+            return;
+        }
+
+        if (value[0] !== '7') {
+            value = '7' + value;
+        }
+
+        if (value.length > 11) value = value.slice(0, 11);
+
+        let formatted = "+7";
+
+        if (value.length > 1) {
+            formatted += " (" + value.slice(1, 4);
+        }
+        if (value.length >= 4) {
+            formatted += ") " + value.slice(4, 7);
+        }
+        if (value.length >= 7) {
+            formatted += "-" + value.slice(7, 9);
+        }
+        if (value.length >= 9) {
+            formatted += "-" + value.slice(9, 11);
+        }
+
+        setFormData({ ...formData, phone: formatted });
+    };
+
     if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -180,11 +213,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
                                     required
                                 />
                                 <input
-                                    type="text"
-                                    placeholder="Телефон"
+                                    type="tel"
+                                    placeholder="+7 (___) ___-__-__"
                                     className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:border-luxury-gold outline-none"
                                     value={formData.phone}
-                                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                    onChange={handlePhoneChange}
+                                    maxLength={18}
                                     required
                                 />
                                 <input
