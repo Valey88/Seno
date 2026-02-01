@@ -53,7 +53,9 @@ async def get_date_availability(
     "", response_model=BookingPaymentResponse, status_code=status.HTTP_201_CREATED
 )
 async def create_booking(
-    booking_data: BookingCreate, db: AsyncSession = Depends(get_db)
+    booking_data: BookingCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(get_current_user_optional),
 ):
     """
     Create a new booking.
@@ -61,7 +63,8 @@ async def create_booking(
     1. Validates time rules (3 hours advance, working hours).
     2. Checks table availability (intervals).
     3. Auto-selects table if not provided.
-    4. Returns payment link.
+    4. Links booking to user if authenticated.
+    5. Returns payment link.
     """
     import logging
 
@@ -69,6 +72,8 @@ async def create_booking(
 
     try:
         logger.info(f"Creating booking: {booking_data.model_dump()}")
+        if current_user:
+            logger.info(f"Authenticated user: {current_user.id} ({current_user.username})")
 
         # 1. Strict Business Logic Validation
         logger.info("Starting validation...")
@@ -104,7 +109,7 @@ async def create_booking(
         # 3. Calculate deposit
         deposit_amount = calculate_deposit_amount(booking_data.guest_count)
 
-        # 4. Create booking record
+        # 4. Create booking record with user_id if authenticated
         booking = Booking(
             user_name=booking_data.user_name,
             user_phone=booking_data.user_phone,
@@ -112,6 +117,7 @@ async def create_booking(
             time=booking_data.time,
             guest_count=booking_data.guest_count,
             table_id=final_table_id,
+            user_id=current_user.id if current_user else None,
             comment=booking_data.comment,
             status=BookingStatus.PENDING,
             deposit_amount=deposit_amount,
@@ -315,7 +321,7 @@ async def get_bookings(
 ):
     """
     Get all bookings with table_number.
-    Admin sees all, User sees own, Guest sees none.
+    Admin sees all, User sees own (by user_id), Guest sees none.
     """
     if not current_user:
         return []
@@ -323,7 +329,15 @@ async def get_bookings(
     query = select(Booking).order_by(desc(Booking.created_at))
 
     if current_user.role != UserRole.ADMIN:
-        query = query.where(Booking.user_phone == current_user.username)
+        # Filter by user_id for reliable user-booking link
+        # Fallback to phone matching for old bookings without user_id
+        from sqlalchemy import or_
+        query = query.where(
+            or_(
+                Booking.user_id == current_user.id,
+                Booking.user_phone == current_user.username  # Legacy fallback
+            )
+        )
 
     result = await db.execute(query)
     bookings = result.scalars().all()
@@ -336,7 +350,7 @@ async def get_bookings(
         tables = tables_result.scalars().all()
         table_numbers = {t.id: t.table_number for t in tables}
 
-    # Convert to response with table_number
+    # Convert to response with table_number and user_id
     booking_responses = []
     for booking in bookings:
         booking_dict = {
@@ -350,6 +364,7 @@ async def get_bookings(
             "deposit_amount": booking.deposit_amount,
             "table_id": booking.table_id,
             "table_number": table_numbers.get(booking.table_id) if booking.table_id else None,
+            "user_id": booking.user_id,
             "comment": booking.comment,
             "created_at": booking.created_at,
         }

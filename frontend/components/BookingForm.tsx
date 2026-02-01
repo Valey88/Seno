@@ -17,6 +17,7 @@ import { AxiosError } from "axios";
 import { HallMap } from "./HallMap";
 import apiClient from "@/services/api";
 import { Table } from "../types";
+import { useAuthStore } from "@/stores/authStore";
 
 type Step = "date-guests" | "time" | "table" | "details" | "payment";
 
@@ -84,6 +85,9 @@ const validatePhone = (value: string): boolean | string => {
 export const BookingForm: React.FC = () => {
   const [step, setStep] = useState<Step>("date-guests");
 
+  // Получаем данные авторизованного пользователя
+  const { user } = useAuthStore();
+
   // Данные формы
   const [date, setDate] = useState<Date>(new Date());
   const [guests, setGuests] = useState<number>(2);
@@ -96,6 +100,7 @@ export const BookingForm: React.FC = () => {
     handleSubmit,
     formState: { errors, isValid },
     watch,
+    setValue,
   } = useForm<ContactFormData>({
     mode: "onChange",
     defaultValues: {
@@ -104,6 +109,15 @@ export const BookingForm: React.FC = () => {
       comment: "",
     },
   });
+
+  // Автозаполнение данных из профиля пользователя
+  useEffect(() => {
+    if (user) {
+      if (user.name) {
+        setValue("name", user.name);
+      }
+    }
+  }, [user, setValue]);
 
   // Данные от API
   const [tables, setTables] = useState<Table[]>([]);

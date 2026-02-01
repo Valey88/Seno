@@ -272,6 +272,7 @@ class BookingRead(BaseModel):
     deposit_amount: float
     table_id: Optional[int]
     table_number: Optional[str] = None  # Custom table number for display
+    user_id: Optional[int] = None
     comment: Optional[str]
     created_at: datetime
 
