@@ -319,7 +319,7 @@ export const TableEditor: React.FC = () => {
                     )}
                     <div
                         ref={mapRef}
-                        className="w-full h-[800px] bg-[#151515] rounded-xl border border-white/10 relative overflow-hidden shadow-inner select-none"
+                        className="w-full h-[500px] md:h-[800px] bg-[#151515] rounded-xl border border-white/10 relative overflow-hidden shadow-inner select-none"
                         onMouseDown={handlePanMouseDown}
                         onMouseMove={(e) => {
                             handlePanMouseMove(e);

@@ -157,3 +157,35 @@ async def init_db_magic():
     except Exception as e:
         return {"error": str(e), "cwd": cwd}
 
+
+@app.get("/migrate-db")
+async def migrate_db_magic():
+    """
+    Endpoint to run database migrations (add user_id to bookings).
+    """
+    import asyncio
+    import os
+    
+    cwd = os.getcwd()
+    results = {}
+    
+    try:
+        # Run migrate_add_user_id.py
+        proc = await asyncio.create_subprocess_exec(
+            "python", "migrate_add_user_id.py",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await proc.communicate()
+        results["migrate_add_user_id"] = {
+            "stdout": stdout.decode(),
+            "stderr": stderr.decode(),
+            "returncode": proc.returncode
+        }
+        
+        results["cwd"] = cwd
+        return results
+
+    except Exception as e:
+        return {"error": str(e), "cwd": cwd}
+

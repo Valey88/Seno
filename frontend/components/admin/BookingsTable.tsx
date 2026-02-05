@@ -215,7 +215,7 @@ export const BookingsTable: React.FC = () => {
                 </div>
             ) : (
                 <div className="bg-[#1a1a1a] rounded-xl border border-white/5 overflow-hidden">
-                    {/* Table Header */}
+                    {/* Table Header (Desktop only) */}
                     <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-[#151515] border-b border-white/5 text-xs text-white/40 uppercase tracking-wider font-medium">
                         <div className="col-span-3">Гость</div>
                         <div className="col-span-2">Дата и время</div>
@@ -235,7 +235,7 @@ export const BookingsTable: React.FC = () => {
                             return (
                                 <div
                                     key={booking.id}
-                                    className="grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-4 hover:bg-white/[0.02] transition-colors items-center"
+                                    className="grid grid-cols-1 md:grid-cols-12 gap-4 px-4 md:px-6 py-4 hover:bg-white/[0.02] transition-colors items-start md:items-center"
                                 >
                                     {/* Guest Info */}
                                     <div className="md:col-span-3 flex items-center gap-3">
@@ -317,7 +317,7 @@ export const BookingsTable: React.FC = () => {
                                     </div>
 
                                     {/* Actions */}
-                                    <div className="md:col-span-3 flex items-center justify-end gap-2">
+                                    <div className="md:col-span-3 flex items-center justify-start md:justify-end gap-2 flex-wrap mt-2 md:mt-0">
                                         {isUpdating ? (
                                             <Loader2
                                                 className="animate-spin text-white/40"
@@ -349,14 +349,14 @@ export const BookingsTable: React.FC = () => {
                                                             className="px-3 py-1.5 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
                                                         >
                                                             <CheckCircle size={12} />
-                                                            Подтвердить
+                                                            Подтверд.
                                                         </button>
                                                         <button
                                                             onClick={() => handleCancel(booking)}
                                                             className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
                                                         >
                                                             <XCircle size={12} />
-                                                            Отменить
+                                                            Отм.
                                                         </button>
                                                     </>
                                                 )}
@@ -367,14 +367,12 @@ export const BookingsTable: React.FC = () => {
                                                             className="px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
                                                         >
                                                             <Edit3 size={12} />
-                                                            Изменить
                                                         </button>
                                                         <button
                                                             onClick={() => handleCancel(booking)}
                                                             className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
                                                         >
                                                             <XCircle size={12} />
-                                                            Отменить
                                                         </button>
                                                     </>
                                                 )}

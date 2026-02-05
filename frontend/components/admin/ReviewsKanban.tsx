@@ -135,7 +135,7 @@ export const ReviewsKanban: React.FC = () => {
     }
 
     return (
-        <div className="h-[calc(100vh-140px)] flex flex-col gap-6">
+        <div className="flex flex-col gap-6 h-full md:h-[calc(100vh-140px)]">
             {/* Панель поиска */}
             <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={18} />
@@ -149,7 +149,7 @@ export const ReviewsKanban: React.FC = () => {
             </div>
 
             {/* Канбан Доска */}
-            <div className="flex gap-6 flex-1 overflow-hidden">
+            <div className="flex flex-col md:flex-row gap-6 flex-1 overflow-hidden">
 
                 {/* КОЛОНКА 1: ТРЕБУЮТ ВНИМАНИЯ (1-3 звезды) */}
                 <div className="flex-1 flex flex-col bg-[#1a1a1a] rounded-2xl border border-white/5 overflow-hidden shadow-2xl">

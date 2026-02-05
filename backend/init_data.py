@@ -6,7 +6,7 @@ Run: python init_data.py
 import asyncio
 
 from app.database import AsyncSessionLocal, init_db
-from app.models import MenuCategory, MenuItem, Table, Zone
+from app.models import MenuCategory, MenuItem, Table, Zone, Booking
 from sqlalchemy import delete
 
 
@@ -18,9 +18,11 @@ async def init_data():
     async with AsyncSessionLocal() as db:
         print("🧹 Очистка старых данных (перезапись базы)...")
         # Удаляем данные в правильном порядке, чтобы не нарушить связи
+        await db.execute(delete(Booking))  # Сначала удаляем брони, т.к. они ссылаются на столы
         await db.execute(delete(MenuItem))
         await db.execute(delete(MenuCategory))
         await db.execute(delete(Table))
+        # await db.execute(delete(User))  # Пользователей пока не удаляем, или удалять аккуратно
         await db.commit()
         print("✨ База очищена.")
 

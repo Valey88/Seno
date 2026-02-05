@@ -1,0 +1,76 @@
+services:
+  # PostgreSQL Database (Self-hosted)
+  db:
+    image: postgres:16-alpine
+    container_name: senoval_db_prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-senoval}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-senoval_secret_password}
+      POSTGRES_DB: ${POSTGRES_DB:-senoval}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-senoval} -d ${POSTGRES_DB:-senoval}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # No ports exposed to host for security, only accessible inside docker network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: senoval_backend_prod
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Database Connection (Internal Docker Network)
+      # Uses the service name 'db' as the hostname
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-senoval}:${POSTGRES_PASSWORD:-senoval_secret_password}@db:5432/${POSTGRES_DB:-senoval}
+      
+      # Security & Auth
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-10080}
+      
+      # Integrations
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      YANDEX_CLIENT_ID: ${YANDEX_CLIENT_ID}
+      YANDEX_CLIENT_SECRET: ${YANDEX_CLIENT_SECRET}
+      YANDEX_REDIRECT_URI: https://${DOMAIN_NAME}/api/auth/yandex/callback
+      
+      # Payments
+      YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID}
+      YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY}
+      YOOKASSA_RETURN_URL: https://${DOMAIN_NAME}/booking/success
+      YOOKASSA_TEST_MODE: ${YOOKASSA_TEST_MODE:-false}
+      
+      # Frontend URL
+      FRONTEND_URL: https://${DOMAIN_NAME}
+      DEBUG: "false"
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://${DOMAIN_NAME}/api
+    container_name: senoval_frontend_prod
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: https://${DOMAIN_NAME}/api
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  postgres_data_prod:

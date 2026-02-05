@@ -26,7 +26,7 @@ export const MenuManager: React.FC = () => {
     };
 
     const handleAddCategory = async () => {
-        if(newCatName) {
+        if (newCatName) {
             try {
                 await createCategory(newCatName);
                 setNewCatName('');
@@ -53,33 +53,33 @@ export const MenuManager: React.FC = () => {
 
             {/* Top Actions */}
             <div className="flex flex-col md:flex-row gap-4 items-end justify-between border-b border-white/5 pb-6">
-                 <div className="w-full md:w-auto flex-1">
-                     <label className="text-white/40 text-[10px] uppercase tracking-widest block mb-2">Новая категория</label>
-                     <div className="flex gap-2">
-                        <input type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)} className="bg-white/5 border border-white/10 p-2 rounded-lg text-white text-sm flex-1 md:w-64 focus:border-luxury-gold outline-none" placeholder="Например: Десерты"/>
+                <div className="w-full md:w-auto flex-1">
+                    <label className="text-white/40 text-[10px] uppercase tracking-widest block mb-2">Новая категория</label>
+                    <div className="flex gap-2">
+                        <input type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)} className="bg-white/5 border border-white/10 p-2 rounded-lg text-white text-sm w-full md:w-64 focus:border-luxury-gold outline-none" placeholder="Например: Десерты" />
                         <button onClick={handleAddCategory} className="px-4 py-2 bg-white/10 hover:bg-white text-white hover:text-black rounded-lg transition-colors text-xs uppercase tracking-widest">Добавить</button>
-                     </div>
-                 </div>
-                 <button onClick={() => { setEditingItem(null); setIsModalOpen(true); }} className="px-6 py-2 bg-luxury-gold text-black rounded-lg hover:bg-white transition-colors text-xs uppercase tracking-widest font-bold h-[42px] shadow-lg shadow-luxury-gold/20">+ Блюдо / Напиток</button>
+                    </div>
+                </div>
+                <button onClick={() => { setEditingItem(null); setIsModalOpen(true); }} className="px-6 py-2 bg-luxury-gold text-black rounded-lg hover:bg-white transition-colors text-xs uppercase tracking-widest font-bold h-[42px] shadow-lg shadow-luxury-gold/20">+ Блюдо / Напиток</button>
             </div>
 
             {/* Filter Bar */}
             <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
-                    <Filter size={16} className="text-luxury-gold"/>
+                    <Filter size={16} className="text-luxury-gold" />
                     <span className="text-white text-sm font-medium">Фильтр по категориям:</span>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                     <button
+                    <button
                         onClick={() => setActiveCategoryFilter('all')}
                         className={`px-3 py-1 rounded-full text-xs border transition-colors ${activeCategoryFilter === 'all' ? 'bg-luxury-gold text-black border-luxury-gold' : 'bg-white/5 border-white/10 text-white hover:border-white'}`}
-                     >
+                    >
                         Все
-                     </button>
+                    </button>
 
-                     {categoriesList.map(c => (
-                         <div key={c.id} className="relative group">
+                    {categoriesList.map(c => (
+                        <div key={c.id} className="relative group">
                             <button
                                 onClick={() => setActiveCategoryFilter(c.id)}
                                 className={`px-3 py-1 rounded-full text-xs border transition-colors flex items-center gap-2
@@ -90,7 +90,7 @@ export const MenuManager: React.FC = () => {
                             <button
                                 onClick={async (e) => {
                                     e.stopPropagation();
-                                    if(!confirm(`Удалить категорию "${c.label}"?`)) return;
+                                    if (!confirm(`Удалить категорию "${c.label}"?`)) return;
                                     const { categories } = useMenuStore.getState();
                                     const catWithId = categories.find(cat => cat.title === c.label || cat.title.toLowerCase().replace(/\s/g, '_') === c.id);
                                     if (catWithId) {
@@ -99,10 +99,10 @@ export const MenuManager: React.FC = () => {
                                 }}
                                 className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                             >
-                                <X size={10}/>
+                                <X size={10} />
                             </button>
-                         </div>
-                     ))}
+                        </div>
+                    ))}
                 </div>
             </div>
 
@@ -116,18 +116,18 @@ export const MenuManager: React.FC = () => {
                     <GlassCard key={item.id} className="relative group hover:border-luxury-gold/50 transition-colors">
                         <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                             <button onClick={() => handleEditClick(item)} className="p-2 bg-black/60 text-white hover:text-luxury-gold rounded-lg backdrop-blur-md">
-                                <Edit size={16}/>
+                                <Edit size={16} />
                             </button>
-                            <button onClick={async () => { if(confirm('Удалить это блюдо?')) { try { await deleteMenuItem(item.id); } catch (e: any) { alert(e.message); } } }} className="p-2 bg-black/60 text-white hover:text-red-400 rounded-lg backdrop-blur-md">
-                                <Trash2 size={16}/>
+                            <button onClick={async () => { if (confirm('Удалить это блюдо?')) { try { await deleteMenuItem(item.id); } catch (e: any) { alert(e.message); } } }} className="p-2 bg-black/60 text-white hover:text-red-400 rounded-lg backdrop-blur-md">
+                                <Trash2 size={16} />
                             </button>
                         </div>
                         <div className="flex gap-4">
                             <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-white/5">
                                 {item.image ? (
-                                    <img src={item.image} className="w-full h-full object-cover" alt={item.title}/>
+                                    <img src={item.image} className="w-full h-full object-cover" alt={item.title} />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-white/20"><UtensilsCrossed size={20}/></div>
+                                    <div className="w-full h-full flex items-center justify-center text-white/20"><UtensilsCrossed size={20} /></div>
                                 )}
                             </div>
                             <div className="flex flex-col justify-center min-w-0">

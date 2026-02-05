@@ -17,6 +17,7 @@ import {
   ExternalLink,
   ChevronDown,
   User as UserIcon,
+  Menu, // Added Menu icon
 } from "lucide-react";
 
 // Components
@@ -35,6 +36,7 @@ type Tab = "dashboard" | "bookings" | "menu" | "tables" | "reviews";
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile menu state
 
   // Состояние для выпадающего меню профиля
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -73,14 +75,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user }) => {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onLogout={handleLogout}
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
       />
 
       {/* 2. Main Content Area */}
-      <div className="flex-1 ml-64 flex flex-col h-screen overflow-hidden bg-[#111]">
+      <div className="flex-1 md:ml-64 ml-0 flex flex-col h-screen overflow-hidden bg-[#111] transition-all duration-300">
         {/* Top Header */}
-        <header className="h-16 bg-[#1a1a1a] border-b border-white/5 flex justify-between items-center px-8 z-30 shrink-0">
+        <header className="h-16 bg-[#1a1a1a] border-b border-white/5 flex justify-between items-center px-4 md:px-8 z-30 shrink-0">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-medium text-white capitalize">
+            {/* Mobile Menu Toggle */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden p-2 text-white/70 hover:text-white"
+            >
+              <Menu size={24} />
+            </button>
+
+            <h1 className="text-lg md:text-xl font-medium text-white capitalize truncate">
               {activeTab === "dashboard" && "Бизнес-аналитика"}
               {activeTab === "bookings" && "Управление бронированиями"}
               {activeTab === "menu" && "Управление меню"}
@@ -165,7 +177,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user }) => {
         </header>
 
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto p-8 relative">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 relative">
           <div className="max-w-[1600px] mx-auto h-full pb-20">
             {activeTab === "dashboard" && <AnalyticsDashboard />}
             {activeTab === "bookings" && <BookingsTable />}

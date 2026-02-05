@@ -20,7 +20,7 @@ export const AnalyticsDashboard: React.FC = () => {
                 </div>
                 {trend && (
                     <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${trend === 'up' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                        {trend === 'up' ? <ArrowUpRight size={14}/> : <ArrowDownRight size={14}/>}
+                        {trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                         {trend === 'up' ? '+12%' : '-4%'}
                     </div>
                 )}
@@ -34,10 +34,10 @@ export const AnalyticsDashboard: React.FC = () => {
     return (
         <div className="space-y-8 animate-in fade-in">
             {/* Header */}
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h2 className="text-2xl text-white font-serif">Обзор показателей</h2>
-                <div className="flex gap-2">
-                    <select className="bg-[#252525] border border-white/10 text-white text-sm rounded-lg px-3 py-2 outline-none focus:border-luxury-gold">
+                <div className="flex gap-2 w-full md:w-auto">
+                    <select className="bg-[#252525] border border-white/10 text-white text-sm rounded-lg px-3 py-2 outline-none focus:border-luxury-gold w-full md:w-auto">
                         <option>Сегодня</option>
                         <option>Эта неделя</option>
                         <option>Этот месяц</option>
@@ -95,8 +95,8 @@ export const AnalyticsDashboard: React.FC = () => {
                 </GlassCard>
 
                 <GlassCard className="!bg-[#252525] p-6">
-                     <h3 className="text-white mb-4 font-medium">Топ блюд (Популярность)</h3>
-                     <div className="space-y-4">
+                    <h3 className="text-white mb-4 font-medium">Топ блюд (Популярность)</h3>
+                    <div className="space-y-4">
                         {[
                             { name: 'Стейк Рибай', count: 145, pct: 80 },
                             { name: 'Цезарь с креветкой', count: 120, pct: 65 },
@@ -113,7 +113,7 @@ export const AnalyticsDashboard: React.FC = () => {
                                 </div>
                             </div>
                         ))}
-                     </div>
+                    </div>
                 </GlassCard>
             </div>
         </div>
