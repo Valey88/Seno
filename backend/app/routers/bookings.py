@@ -33,6 +33,37 @@ from app.services.telegram_service import send_booking_notification
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 
+async def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Security(
+        HTTPBearer(auto_error=False)
+    ),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """Get current user if authenticated, otherwise return None."""
+    if not credentials:
+        return None
+    try:
+        from jose import jwt
+
+        from app.auth import get_user_by_username
+        from app.database import settings
+        from app.schemas import TokenData
+
+        payload = jwt.decode(
+            credentials.credentials,
+            settings.secret_key,
+            algorithms=[settings.algorithm],
+        )
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+        token_data = TokenData(username=username)
+        user = await get_user_by_username(db, username=token_data.username)
+        return user
+    except Exception:
+        return None
+
+
 @router.get("/availability/{date_str}", response_model=DateAvailabilityResponse)
 async def get_date_availability(
     date_str: date,
@@ -279,39 +310,6 @@ async def booking_webhook(
         return {"status": "cancelled"}
 
     return {"status": "unknown"}
-
-
-async def get_current_user_optional(
-    credentials: HTTPAuthorizationCredentials | None = Security(
-        HTTPBearer(auto_error=False)
-    ),
-    db: AsyncSession = Depends(get_db),
-) -> User | None:
-    """Get current user if authenticated, otherwise return None."""
-    if not credentials:
-        return None
-    try:
-        from jose import jwt
-
-        from app.auth import get_user_by_username
-        from app.database import settings
-        from app.schemas import TokenData
-
-        # Note: In a real app, import settings properly.
-        # Assuming settings is available in app.database or app.config
-        payload = jwt.decode(
-            credentials.credentials,
-            settings.secret_key,
-            algorithms=[settings.algorithm],
-        )
-        username: str = payload.get("sub")
-        if username is None:
-            return None
-        token_data = TokenData(username=username)
-        user = await get_user_by_username(db, username=token_data.username)
-        return user
-    except Exception:
-        return None
 
 
 @router.get("", response_model=List[BookingRead])
