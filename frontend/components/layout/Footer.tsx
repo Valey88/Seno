@@ -34,7 +34,6 @@ export const Footer: React.FC = () => {
 
         <div className="text-white/30 text-xs tracking-[0.2em] font-light">
           <p className="mb-2 text-white transition-colors cursor-pointer">Набережная Мойки 82, SAINT-PETERSBURG</p>
-          <p className="text-white">&copy; 2016 SENOVAL RESTAURANT GROUP</p>
         </div>
       </div>
     </footer>

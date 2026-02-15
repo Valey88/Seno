@@ -45,10 +45,10 @@ export const Header: React.FC<NavigationProps> = ({ onOpenAuth }) => {
             <span
               className={`font-serif text-2xl tracking-widest transition-colors duration-300 text-white group-hover:text-luxury-gold`}
             >
-              SENOVAL
+              Сеновал
             </span>
             <span className="text-[10px] text-luxury-gold uppercase tracking-[0.4em] opacity-0 group-hover:opacity-100 transition-all duration-500 -mt-1 transform -translate-x-2 group-hover:translate-x-0">
-              набережная Мойки 82
+              Набережная Мойки 82
             </span>
           </Link>
 
