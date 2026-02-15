@@ -20,6 +20,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # Local env files (production env is passed via Docker)
+.env
+.env*
 .env*.local
 
 # IDE
@@ -31,4 +33,7 @@ yarn-error.log*
 .gitignore
 
 # Documentation
-README.md
+*.md
+
+# Logs
+*.log

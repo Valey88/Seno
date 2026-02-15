@@ -23,16 +23,27 @@ ENV
 .coverage
 htmlcov
 
-# SQLite database (development)
+# SQLite databases (development only)
 *.db
 *.db-journal
 
-# Environment
-.env.local
-.env.development
+# Environment files
+.env
+.env.*
+
+# Documentation (not needed in production)
+*.md
+
+# Migration/debug scripts (not needed in production)
+migrate_*.py
+debug_*.py
+check_db.py
+create_admin.py
+init_data.py
+activate_venv.ps1
 
 # Misc
 *.log
 *.tmp
-README.md
-QUICKSTART.md
+src/
+api/

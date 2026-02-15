@@ -28,14 +28,14 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
       <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-4">
         <div className="absolute top-0 left-1/2 w-px h-32 bg-gradient-to-b from-transparent to-luxury-gold/50"></div>
         <span className="text-luxury-gold text-xs uppercase tracking-[0.3em] mb-6 animate-in slide-in-from-bottom-4 duration-1000 delay-300 drop-shadow-md">
-          Est. 2016 &bull; Saint-Petersburg
+          Осн. 2016 &bull; Санкт-Петербург
         </span>
         <h1 className="font-serif text-6xl md:text-8xl lg:text-9xl text-white mb-8 leading-[0.9] tracking-tight drop-shadow-2xl">
-          Traktir <br /> <span className="italic text-white/90">Senoval</span>
+          Трактир <br /> <span className="italic text-white/90">Сеновал</span>
         </h1>
         <p className="max-w-lg text-white text-sm md:text-base leading-loose font-medium mb-12 animate-in slide-in-from-bottom-8 duration-1000 delay-500 drop-shadow-lg">
-          Новое прочтение северных традиций в историческом центре. <br />
-          Тёплый минимализм, высокая кухня, набережная Мойки.
+          Это не ресторан молекулярной кухни, это место где отдыхаешь душой.  <br />
+          К нам приходят голодными, а уходят сытыми и довольными.
         </p>
         <div className="flex flex-col md:flex-row gap-6 items-center animate-in slide-in-from-bottom-8 duration-1000 delay-700">
           <button
@@ -76,13 +76,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
           </div>
           <div className="space-y-8 text-left">
             <h2 className="font-serif text-4xl md:text-5xl text-white italic drop-shadow-md">
-              Душа <span className="text-luxury-gold not-italic">Севера</span>
+              Душа <span className="text-luxury-gold not-italic">Cеверной столицы</span>
             </h2>
             <div className="w-12 h-px bg-luxury-gold shadow-[0_0_10px_rgba(212,175,55,0.8)]"></div>
             <p className="text-white/80 leading-relaxed font-light text-lg">
-              Мы создали пространство, где время замедляется. Название «Сеновал»
-              — это отсылка к теплу, натуральным материалам и простой, но
-              честной еде.
+              Главное правило: Говорите громко, смейтесь искренне, требуйте добавки.
             </p>
           </div>
         </div>
@@ -166,11 +164,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
               <Utensils size={24} />
             </div>
             <h3 className="font-serif text-xl text-white mb-4">
-              Авторская кухня
+              Домашняя кухня
             </h3>
             <p className="text-white/60 text-sm leading-relaxed">
-              Локальные фермерские продукты и дичь в современном прочтении. Мы
-              уважаем традиции, но не боимся экспериментов.
+              Мы готовим с одной простой мыслью: чтобы гости уходили сытыми и довольными. Чтобы после нашей жареной картошечки или после тарелки наваристого борща с салом и сметаной, в душе наступал тот самый миг, что аж хочется вздремнуть на сеновале.
             </p>
           </GlassCard>
 
@@ -179,11 +176,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
               <Wine size={24} />
             </div>
             <h3 className="font-serif text-xl text-white mb-4">
-              Настойки и Бар
+              Бар
             </h3>
             <p className="text-white/60 text-sm leading-relaxed">
-              Коллекция домашних настоек на северных ягодах и травах. Крафтовое
-              пиво и тщательно подобранная винная карта.
+              Знакомьтесь — главные герои нашего стола, они рождаются в больших стеклянных банках, подаются на центр стола, для душевных разговоров, чтоб согреться. Начните с хреновухи для аппетита, закончите вишнёвой настойкой для души.
             </p>
           </GlassCard>
 
@@ -193,8 +189,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
             </div>
             <h3 className="font-serif text-xl text-white mb-4">Атмосфера</h3>
             <p className="text-white/60 text-sm leading-relaxed">
-              Приглушенный свет, натуральное дерево и легкий джаз. Идеальное
-              место для теплых встреч в центре Петербурга.
+              Забудьте о слове «ресторан». Вы входите в трактир — Вас встретят тяжёлые дубовые лавки, деревянные столы с потертостями, теплый приглушенный свет, фоновая музыка,стены помнят все истории рассказанные нашими гостями.
+              У нас не обслуживают, а угощают. Здесь вы не клиент, а дорогой гость которого ждали.
             </p>
           </GlassCard>
         </div>

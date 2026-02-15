@@ -1,29 +1,39 @@
-# Backend Dockerfile for FastAPI
-# Using slim image without compiling - all packages have binary wheels
-FROM python:3.12-slim-bookworm
+# ============================================
+# Stage 1: Build dependencies
+# ============================================
+FROM python:3.12-slim-bookworm AS builder
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+WORKDIR /build
 
-# Set work directory
+# Install build dependencies for binary wheels
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python packages into /install prefix
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ============================================
+# Stage 2: Minimal runtime image
+# ============================================
+FROM python:3.12-alpine AS runner
+
+# Install only runtime library for PostgreSQL
+RUN apk add --no-cache libpq
+
 WORKDIR /app
 
-# Install only libpq for runtime (no gcc needed for binary wheels)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+# Copy installed Python packages from builder
+COPY --from=builder /install /usr/local
 
-# Install Python dependencies (using binary wheels)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy only application source code
+COPY app/ ./app/
 
-# Copy project
-COPY . .
+# Non-root user for security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
 
-# Expose port
 EXPOSE 8000
 
-# Command to run the application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
