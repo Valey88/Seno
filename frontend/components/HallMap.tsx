@@ -16,6 +16,7 @@ const ZONES = [
   { id: Zone.HALL_1, label: "1 зал" },
   { id: Zone.HALL_2, label: "2 зал" },
   { id: Zone.HALL_3, label: "3 зал" },
+  { id: Zone.HALL_4, label: "4 зал" },
 ];
 
 export const HallMap: React.FC<HallMapProps> = ({

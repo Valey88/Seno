@@ -27,7 +27,8 @@ async def send_booking_notification(booking: Booking, table: Table = None) -> bo
     zone_names = {
         Zone.HALL_1: "1 зал",
         Zone.HALL_2: "2 зал",
-        Zone.HALL_3: "3 зал"
+        Zone.HALL_3: "3 зал",
+        Zone.HALL_4: "4 зал"
     }
     zone_name = zone_names.get(table.zone, table.zone.value) if table else "Не указан"
     

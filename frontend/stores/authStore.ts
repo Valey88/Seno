@@ -133,7 +133,8 @@ export const useAuthStore = create<AuthState>()(
 
       loginWithYandex: () => {
         // Redirect to Yandex OAuth endpoint
-        window.location.href = "http://localhost:8000/api/auth/yandex";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        window.location.href = `${apiUrl}/auth/yandex`;
       },
 
       handleOAuthCallback: async (token: string) => {

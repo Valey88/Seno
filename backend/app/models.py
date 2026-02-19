@@ -30,6 +30,7 @@ class Zone(str, enum.Enum):
     HALL_1 = "HALL_1"
     HALL_2 = "HALL_2"
     HALL_3 = "HALL_3"
+    HALL_4 = "HALL_4"
 
 
 class BookingStatus(str, enum.Enum):

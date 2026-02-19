@@ -174,9 +174,9 @@ export const TableEditor: React.FC = () => {
         <div className="space-y-6 animate-in fade-in">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10">
                 <div className="flex gap-2 bg-black/30 p-1 rounded-lg">
-                    {([Zone.HALL_1, Zone.HALL_2, Zone.HALL_3] as Zone[]).map(z => (
+                    {([Zone.HALL_1, Zone.HALL_2, Zone.HALL_3, Zone.HALL_4] as Zone[]).map(z => (
                         <button key={z} onClick={() => setActiveZone(z)} className={`px-4 py-2 text-xs uppercase rounded transition-colors ${activeZone === z ? 'bg-white/20 text-white' : 'text-white/40 hover:text-white'}`}>
-                            {z === Zone.HALL_1 ? 'Зал 1' : z === Zone.HALL_2 ? 'Зал 2' : 'Зал 3'}
+                            {z === Zone.HALL_1 ? 'Зал 1' : z === Zone.HALL_2 ? 'Зал 2' : z === Zone.HALL_3 ? 'Зал 3' : 'Зал 4'}
                         </button>
                     ))}
                 </div>
