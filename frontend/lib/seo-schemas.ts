@@ -20,16 +20,16 @@ export const restaurantSchema = {
     "menu": "https://traktir-senoval.ru/menu",
     "address": {
         "@type": "PostalAddress",
-        "streetAddress": "ул. Шевченко 20В",
-        "addressLocality": "Оренбург",
-        "addressRegion": "Оренбургская область",
-        "postalCode": "460000", // ЗАМЕНИТЕ на реальный индекс
+        "streetAddress": "набережная реки Мойки, 82",
+        "addressLocality": "Санкт-Петербург",
+        "addressRegion": "Санкт-Петербург",
+        "postalCode": "190000",
         "addressCountry": "RU"
     },
     "geo": {
         "@type": "GeoCoordinates",
-        "latitude": 51.7727, // ЗАМЕНИТЕ на реальные координаты
-        "longitude": 55.0988
+        "latitude": 59.9386,
+        "longitude": 30.3141
     },
     "openingHoursSpecification": [
         {
