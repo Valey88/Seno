@@ -234,10 +234,10 @@ async def yandex_callback(
     from fastapi.responses import RedirectResponse
     
     if error:
-        return RedirectResponse(url=f"http://localhost:3000/?auth_error={error}")
+        return RedirectResponse(url=f"{settings.frontend_url}/?auth_error={error}")
     
     if not code:
-        return RedirectResponse(url="http://localhost:3000/?auth_error=no_code")
+        return RedirectResponse(url=f"{settings.frontend_url}/?auth_error=no_code")
     
     # Exchange code for access token
     try:
@@ -255,7 +255,7 @@ async def yandex_callback(
             
             if token_response.status_code != 200:
                 return RedirectResponse(
-                    url=f"http://localhost:3000/?auth_error=token_exchange_failed"
+                    url=f"{settings.frontend_url}/?auth_error=token_exchange_failed"
                 )
             
             token_data = token_response.json()
@@ -269,7 +269,7 @@ async def yandex_callback(
             
             if user_response.status_code != 200:
                 return RedirectResponse(
-                    url=f"http://localhost:3000/?auth_error=user_info_failed"
+                    url=f"{settings.frontend_url}/?auth_error=user_info_failed"
                 )
             
             yandex_user = user_response.json()
@@ -278,7 +278,7 @@ async def yandex_callback(
         import logging
         logger = logging.getLogger(__name__)
         logger.error(f"Yandex OAuth error: {e}")
-        return RedirectResponse(url=f"http://localhost:3000/?auth_error=network_error")
+        return RedirectResponse(url=f"{settings.frontend_url}/?auth_error=network_error")
     
     # Find or create user
     yandex_id = yandex_user.get("id")
@@ -334,5 +334,5 @@ async def yandex_callback(
     
     # Redirect to frontend with token
     return RedirectResponse(
-        url=f"http://localhost:3000/?access_token={access_token}"
+        url=f"{settings.frontend_url}/?access_token={access_token}"
     )
